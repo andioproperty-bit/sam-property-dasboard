@@ -38,7 +38,12 @@ create or replace function enforce_profile_role_change()
 returns trigger language plpgsql as $$
 begin
   if NEW.role <> OLD.role and not is_admin() then
-    raise exception 'Hanya admin yang boleh mengubah role';
+    -- Kalau sudah ada admin, hanya admin yang boleh mengubah role siapa pun.
+    -- Kalau BELUM ada admin sama sekali (setup pertama kali), izinkan
+    -- pengubahan pertama supaya tidak terkunci sendiri (chicken-and-egg).
+    if exists (select 1 from profiles where role = 'admin') then
+      raise exception 'Hanya admin yang boleh mengubah role';
+    end if;
   end if;
   return NEW;
 end;
