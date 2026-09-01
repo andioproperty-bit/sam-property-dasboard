@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { formatRupiah } from '../lib/format';
+import Modal from './Modal';
 
 export default function StaffTab({ profiles, transactions, isAdmin, refresh, showToast }) {
   const [savingId, setSavingId] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   async function handleRoleChange(id, role) {
     setSavingId(id);
@@ -21,15 +23,10 @@ export default function StaffTab({ profiles, transactions, isAdmin, refresh, sho
           <h1>Staf &amp; Peran</h1>
           <p>Performa tiap staf dan pengaturan hak akses (Admin / Agen)</p>
         </div>
+        {isAdmin && (
+          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>+ Tambah Staf Baru</button>
+        )}
       </div>
-
-      {isAdmin && (
-        <div className="panel" style={{ marginBottom: 20, fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-          <strong style={{ color: 'var(--ink)' }}>Menambah staf baru:</strong> buka Supabase Dashboard → Authentication → Users → Add user,
-          buatkan email &amp; password untuk staf tersebut. Akun akan otomatis muncul di daftar bawah ini dengan role default <em>Agen</em> —
-          ubah jadi <em>Admin</em> di sini kalau perlu.
-        </div>
-      )}
 
       <div className="agent-grid">
         {profiles.map((p) => {
@@ -60,6 +57,72 @@ export default function StaffTab({ profiles, transactions, isAdmin, refresh, sho
           );
         })}
       </div>
+
+      {showAddModal && (
+        <AddStaffModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => { setShowAddModal(false); showToast('Staf baru berhasil ditambahkan'); refresh(); }}
+          showToast={showToast}
+        />
+      )}
     </section>
+  );
+}
+
+function AddStaffModal({ onClose, onSuccess, showToast }) {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  function set(key, val) { setForm((f) => ({ ...f, [key]: val })); }
+
+  async function handleSubmit() {
+    setError('');
+    if (!form.name.trim()) { setError('Nama wajib diisi'); return; }
+    if (!form.email.trim()) { setError('Email wajib diisi'); return; }
+    if (form.password.length < 6) { setError('Password minimal 6 karakter'); return; }
+
+    setSubmitting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) { setError('Sesi login tidak ditemukan, coba login ulang.'); setSubmitting(false); return; }
+
+      const res = await fetch('/api/admin/create-staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || 'Gagal menambah staf');
+        setSubmitting(false);
+        return;
+      }
+      onSuccess();
+    } catch (e) {
+      setError('Terjadi kesalahan: ' + e.message);
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <h3>Tambah Staf Baru</h3>
+      <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: -10, marginBottom: 16, lineHeight: 1.5 }}>
+        Akun langsung aktif dan bisa dipakai login. Role default staf baru adalah <strong>Agen</strong> —
+        bisa diubah jadi Admin lewat kartu staf setelah dibuat.
+      </p>
+      {error && <div className="auth-error">{error}</div>}
+      <div className="field"><label>Nama</label><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Siti Rahma" /></div>
+      <div className="field"><label>Email</label><input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="siti@sampropertyagency.com" /></div>
+      <div className="field"><label>No. HP (opsional)</label><input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="0812xxxxxxx" /></div>
+      <div className="field"><label>Password Awal</label><input type="text" value={form.password} onChange={(e) => set('password', e.target.value)} placeholder="Minimal 6 karakter" /></div>
+      <div className="field-hint">Sampaikan password ini ke staf yang bersangkutan secara langsung/pribadi.</div>
+      <div className="modal-actions">
+        <button className="btn btn-ghost" onClick={onClose} disabled={submitting}>Batal</button>
+        <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>{submitting ? 'Menyimpan...' : 'Buat Akun'}</button>
+      </div>
+    </Modal>
   );
 }
