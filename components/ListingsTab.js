@@ -160,7 +160,7 @@ function PropertyModal({ data, profiles, isAdmin, user, onClose, onSave, onDelet
         <div className="field"><label>Luas Tanah/Bangunan (m2)</label><input value={form.area} onChange={(e) => set('area', e.target.value)} placeholder="120/90" /></div>
         <div className="field">
           <label>Agen Penanggung Jawab</label>
-          <select value={form.agent_id} onChange={(e) => set('agent_id', e.target.value)} disabled={!isAdmin && !!data.id}>
+          <select value={form.agent_id} onChange={(e) => set('agent_id', e.target.value)} disabled={!isAdmin}>
             <option value="">- Pilih Agen -</option>
             {profiles.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>

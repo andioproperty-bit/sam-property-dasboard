@@ -123,7 +123,7 @@ function LeadModal({ data, properties, profiles, isAdmin, user, onClose, onSave,
         <div className="field"><label>Status</label><select value={form.status} onChange={(e) => set('status', e.target.value)}>{STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}</select></div>
       </div>
       <div className="field"><label>Tertarik Properti</label><select value={form.property_id} onChange={(e) => set('property_id', e.target.value)}><option value="">- Belum ditentukan -</option>{properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</select></div>
-      <div className="field"><label>Agen</label><select value={form.agent_id} onChange={(e) => set('agent_id', e.target.value)} disabled={!isAdmin && !!data.id}><option value="">- Pilih Agen -</option>{profiles.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+      <div className="field"><label>Agen</label><select value={form.agent_id} onChange={(e) => set('agent_id', e.target.value)} disabled={!isAdmin}><option value="">- Pilih Agen -</option>{profiles.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
       <div className="field"><label>Catatan</label><textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Catatan follow-up..." /></div>
       <div className="modal-actions">
         {data.id && isAdmin && <button className="btn btn-ghost" style={{ marginRight: 'auto', color: 'var(--danger)' }} onClick={() => onDelete(data.id)}>Hapus</button>}

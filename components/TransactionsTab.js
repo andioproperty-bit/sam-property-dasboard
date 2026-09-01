@@ -96,7 +96,7 @@ function TransactionModal({ data, properties, leads, profiles, isAdmin, user, on
       <div className="field"><label>Properti</label><select value={form.property_id} onChange={(e) => set('property_id', e.target.value)}>{properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</select></div>
       <div className="field"><label>Lead / Klien</label><select value={form.lead_id} onChange={(e) => set('lead_id', e.target.value)}><option value="">- Tidak ada -</option>{leads.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></div>
       <div className="field-row">
-        <div className="field"><label>Agen</label><select value={form.agent_id} onChange={(e) => set('agent_id', e.target.value)} disabled={!isAdmin && !!data.id}>{profiles.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+        <div className="field"><label>Agen</label><select value={form.agent_id} onChange={(e) => set('agent_id', e.target.value)} disabled={!isAdmin}>{profiles.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
         <div className="field"><label>Tipe</label><select value={form.type} onChange={(e) => set('type', e.target.value)}><option>Jual</option><option>Sewa</option></select></div>
       </div>
       <div className="field-row">
