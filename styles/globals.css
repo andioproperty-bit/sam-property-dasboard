@@ -24,7 +24,7 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:v
 a{color:inherit;}
 
 /* ---------- Auth pages ---------- */
-.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;}
 .auth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:36px 32px;width:100%;max-width:380px;}
 .auth-brand{font-family:var(--font-display);font-size:24px;font-weight:600;margin-bottom:2px;}
 .auth-tag{color:var(--ink-soft);font-size:13.5px;margin-bottom:26px;}
@@ -48,7 +48,9 @@ nav{display:flex;flex-direction:column;gap:2px;flex:1;}
 .sidebar-logout{margin-top:10px;background:none;border:1px solid rgba(239,237,228,0.25);color:#EFEDE4;font-size:12.5px;padding:7px 10px;border-radius:6px;cursor:pointer;width:100%;font-family:var(--font-body);}
 .sidebar-logout:hover{background:rgba(255,255,255,0.08);}
 
-.main{flex:1;min-width:0;padding:34px 40px 60px 40px;}
+.main{flex:1;min-width:0;padding:34px 40px 60px 40px;position:relative;}
+.watermark-logo{position:absolute;inset:0;z-index:-1;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;}
+.watermark-logo img{width:440px;max-width:55%;opacity:0.055;}
 .topbar{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;gap:16px;flex-wrap:wrap;}
 .topbar h1{font-family:var(--font-display);font-size:28px;font-weight:600;margin:0 0 4px 0;}
 .topbar p{margin:0;color:var(--ink-soft);font-size:14px;}

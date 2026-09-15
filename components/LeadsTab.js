@@ -66,13 +66,14 @@ export default function LeadsTab({ leads, properties, profiles, user, isAdmin, r
           <div className="empty-state"><div className="big">Tidak ditemukan</div><div>Coba ubah kata kunci atau filter status.</div></div>
         ) : (
           <table>
-            <thead><tr><th>Nama</th><th>Sumber</th><th>Properti Diminati</th><th>Status</th><th>Agen</th><th></th></tr></thead>
+            <thead><tr><th>No</th><th>Nama</th><th>Sumber</th><th>Properti Diminati</th><th>Status</th><th>Agen</th><th></th></tr></thead>
             <tbody>
-              {rows.map((l) => {
+              {rows.map((l, idx) => {
                 const prop = properties.find((p) => p.id === l.property_id);
                 const agent = profiles.find((a) => a.id === l.agent_id);
                 return (
                   <tr key={l.id}>
+                    <td className="cell-soft">{idx + 1}</td>
                     <td><div className="cell-strong">{l.name}</div><div className="cell-soft">{l.phone || '-'}</div></td>
                     <td>{l.source || '-'}</td>
                     <td>{prop ? prop.title : <span className="cell-soft">-</span>}</td>

@@ -52,6 +52,7 @@ export default function Dashboard() {
     <div className="app">
       <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} profile={profile} isAdmin={isAdmin} />
       <main className="main">
+        <div className="watermark-logo"><img src="/logo-sam-property.jpg" alt="" /></div>
         {dataLoading ? (
           <div className="full-loading" style={{ minHeight: '40vh' }}>Memuat data...</div>
         ) : (

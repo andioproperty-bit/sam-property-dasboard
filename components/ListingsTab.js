@@ -86,12 +86,13 @@ export default function ListingsTab({ properties, profiles, user, isAdmin, refre
           <div className="empty-state"><div className="big">Tidak ditemukan</div><div>Coba ubah kata kunci atau filter pencarian.</div></div>
         ) : (
           <table>
-            <thead><tr><th>Listing</th><th>Kategori</th><th>Tipe</th><th>Harga</th><th>Status</th><th>Agen</th><th></th></tr></thead>
+            <thead><tr><th>No</th><th>Listing</th><th>Kategori</th><th>Tipe</th><th>Harga</th><th>Status</th><th>Agen</th><th></th></tr></thead>
             <tbody>
-              {rows.map((p) => {
+              {rows.map((p, idx) => {
                 const agent = profiles.find((a) => a.id === p.agent_id);
                 return (
                   <tr key={p.id}>
+                    <td className="cell-soft">{idx + 1}</td>
                     <td><div className="cell-strong">{p.title}</div><div className="cell-soft">{p.address || '-'}</div></td>
                     <td>{p.category || '-'}</td>
                     <td>{p.type === 'Jual' ? <span className="badge badge-gold">Jual</span> : <span className="badge badge-green">Sewa</span>}</td>

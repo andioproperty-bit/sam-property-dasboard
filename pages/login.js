@@ -30,6 +30,7 @@ export default function Login() {
 
   return (
     <div className="auth-wrap">
+      <div className="watermark-logo"><img src="/logo-sam-property.jpg" alt="" /></div>
       <div className="auth-card">
         <div className="auth-brand">SAM Property</div>
         <div className="auth-tag">Masuk ke dashboard internal</div>
