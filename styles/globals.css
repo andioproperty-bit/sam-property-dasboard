@@ -50,7 +50,7 @@ nav{display:flex;flex-direction:column;gap:2px;flex:1;}
 
 .main{flex:1;min-width:0;padding:34px 40px 60px 40px;position:relative;}
 .watermark-logo{position:absolute;inset:0;z-index:-1;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;}
-.watermark-logo img{width:440px;max-width:55%;opacity:0.055;}
+.watermark-logo img{width:440px;max-width:55%;opacity:0.16;mix-blend-mode:multiply;}
 .topbar{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;gap:16px;flex-wrap:wrap;}
 .topbar h1{font-family:var(--font-display);font-size:28px;font-weight:600;margin:0 0 4px 0;}
 .topbar p{margin:0;color:var(--ink-soft);font-size:14px;}
