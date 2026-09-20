@@ -1,28 +1,254 @@
--- Jalankan di Supabase > SQL Editor (project: sam-property)
--- Tujuan: membuat tempat penyimpanan (bucket) khusus untuk foto listing,
--- yang bisa diupload oleh staf yang login, dan dibaca publik (untuk
--- ditampilkan di website samproperti.id).
+import { useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import Modal from './Modal';
+import { formatRupiah } from '../lib/format';
 
--- 1) Buat bucket "property-photos" (public = bisa dibaca siapa saja lewat URL)
-insert into storage.buckets (id, name, public)
-values ('property-photos', 'property-photos', true)
-on conflict (id) do nothing;
+const STATUS_OPTIONS = ['Tersedia', 'Pending', 'Terjual', 'Tersewa'];
+const CATEGORY_OPTIONS = ['Rumah', 'Apartemen', 'Ruko', 'Tanah', 'Gudang', 'Kos-kosan'];
 
--- 2) Siapa saja boleh MELIHAT/download foto di bucket ini (perlu, supaya
---    foto bisa tampil di website publik)
-create policy "Publik bisa lihat foto properti"
-on storage.objects for select
-to public
-using (bucket_id = 'property-photos');
+export default function ListingsTab({ properties, profiles, user, isAdmin, refresh, showToast }) {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [editing, setEditing] = useState(null); // null = closed, {} = new, {...} = edit
 
--- 3) Hanya staf yang SUDAH LOGIN (authenticated) yang boleh upload foto baru
-create policy "Staf bisa upload foto properti"
-on storage.objects for insert
-to authenticated
-with check (bucket_id = 'property-photos');
+  const rows = properties
+    .filter((p) => {
+      const matchSearch = (p.title || '').toLowerCase().includes(search.toLowerCase()) || (p.address || '').toLowerCase().includes(search.toLowerCase());
+      const matchStatus = !statusFilter || p.status === statusFilter;
+      const matchType = !typeFilter || p.type === typeFilter;
+      return matchSearch && matchStatus && matchType;
+    })
+    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
--- 4) Staf yang login juga boleh menghapus/mengganti foto yang salah upload
-create policy "Staf bisa hapus foto properti"
-on storage.objects for delete
-to authenticated
-using (bucket_id = 'property-photos');
+  function canManage(p) {
+    return isAdmin || p.agent_id === user.id;
+  }
+
+  async function handleSave(form) {
+    const payload = {
+      title: form.title,
+      type: form.type,
+      category: form.category,
+      address: form.address,
+      price: Number(form.price) || 0,
+      status: form.status,
+      area: form.area,
+      agent_id: form.agent_id || null,
+      image_url: form.image_url || null,
+    };
+    let error;
+    if (form.id) {
+      ({ error } = await supabase.from('properties').update(payload).eq('id', form.id));
+    } else {
+      ({ error } = await supabase.from('properties').insert(payload));
+    }
+    if (error) { showToast('Gagal menyimpan: ' + error.message); return; }
+    setEditing(null);
+    showToast('Listing tersimpan');
+    refresh();
+  }
+
+  async function handleDelete(id) {
+    const { error } = await supabase.from('properties').delete().eq('id', id);
+    if (error) { showToast('Gagal menghapus: ' + error.message); return; }
+    setEditing(null);
+    showToast('Listing dihapus');
+    refresh();
+  }
+
+  return (
+    <section>
+      <div className="topbar">
+        <div>
+          <h1>Listing Properti</h1>
+          <p>Semua unit jual &amp; sewa yang dikelola SAM Property</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setEditing({})}>+ Tambah Listing</button>
+      </div>
+
+      <div className="filter-row">
+        <input type="text" placeholder="Cari judul / alamat..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="">Semua Status</option>
+          {STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}
+        </select>
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="">Jual &amp; Sewa</option>
+          <option>Jual</option>
+          <option>Sewa</option>
+        </select>
+      </div>
+
+      <div className="table-wrap">
+        {properties.length === 0 ? (
+          <div className="empty-state"><div className="big">Belum ada listing</div><div>Tambahkan properti pertama untuk mulai mengelola database jual/sewa.</div></div>
+        ) : rows.length === 0 ? (
+          <div className="empty-state"><div className="big">Tidak ditemukan</div><div>Coba ubah kata kunci atau filter pencarian.</div></div>
+        ) : (
+          <table>
+            <thead><tr><th>No</th><th>Foto</th><th>Listing</th><th>Kategori</th><th>Tipe</th><th>Harga</th><th>Status</th><th>Agen</th><th></th></tr></thead>
+            <tbody>
+              {rows.map((p, idx) => {
+                const agent = profiles.find((a) => a.id === p.agent_id);
+                return (
+                  <tr key={p.id}>
+                    <td className="cell-soft">{idx + 1}</td>
+                    <td>
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.title} style={{ width: 56, height: 44, objectFit: 'cover', borderRadius: 6 }} />
+                      ) : (
+                        <div style={{ width: 56, height: 44, borderRadius: 6, background: '#eee' }} />
+                      )}
+                    </td>
+                    <td><div className="cell-strong">{p.title}</div><div className="cell-soft">{p.address || '-'}</div></td>
+                    <td>{p.category || '-'}</td>
+                    <td>{p.type === 'Jual' ? <span className="badge badge-gold">Jual</span> : <span className="badge badge-green">Sewa</span>}</td>
+                    <td className="cell-strong">{formatRupiah(p.price)}</td>
+                    <td><span className={'badge ' + (p.status === 'Tersedia' ? 'badge-green' : p.status === 'Pending' ? 'badge-gold' : 'badge-grey')}>{p.status}</span></td>
+                    <td>{agent ? agent.name : <span className="cell-soft">-</span>}</td>
+                    <td>
+                      {canManage(p) && (
+                        <div className="row-actions">
+                          <button className="icon-btn" title="Edit" onClick={() => setEditing(p)}>✎</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {editing !== null && (
+        <PropertyModal
+          data={editing}
+          profiles={profiles}
+          isAdmin={isAdmin}
+          user={user}
+          onClose={() => setEditing(null)}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          showToast={showToast}
+        />
+      )}
+    </section>
+  );
+}
+
+function PropertyModal({ data, profiles, isAdmin, user, onClose, onSave, onDelete, showToast }) {
+  const [form, setForm] = useState({
+    id: data.id || null,
+    title: data.title || '',
+    type: data.type || 'Jual',
+    category: data.category || 'Rumah',
+    address: data.address || '',
+    price: data.price || '',
+    status: data.status || 'Tersedia',
+    area: data.area || '',
+    agent_id: data.agent_id || (isAdmin ? '' : user.id),
+    image_url: data.image_url || '',
+  });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [preview, setPreview] = useState(data.image_url || '');
+  const [saving, setSaving] = useState(false);
+
+  function set(key, val) { setForm((f) => ({ ...f, [key]: val })); }
+
+  function handlePhotoChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('File harus berupa gambar (JPG/PNG)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Ukuran foto maksimal 5MB');
+      return;
+    }
+    setPhotoFile(file);
+    setPreview(URL.createObjectURL(file));
+  }
+
+  function removePhoto() {
+    setPhotoFile(null);
+    setPreview('');
+    set('image_url', '');
+  }
+
+  async function handleSubmit() {
+    if (!form.title.trim()) return;
+    setSaving(true);
+
+    let imageUrl = form.image_url;
+
+    if (photoFile) {
+      const ext = photoFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('property-photos')
+        .upload(fileName, photoFile, { cacheControl: '3600', upsert: false });
+
+      if (uploadError) {
+        showToast('Gagal upload foto: ' + uploadError.message);
+        setSaving(false);
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from('property-photos')
+        .getPublicUrl(fileName);
+
+      imageUrl = publicData.publicUrl;
+    }
+
+    await onSave({ ...form, image_url: imageUrl });
+    setSaving(false);
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <h3>{data.id ? 'Edit' : 'Tambah'} Listing Properti</h3>
+
+      <div className="field">
+        <label>Foto Properti</label>
+        {preview ? (
+          <div style={{ marginBottom: 8 }}>
+            <img src={preview} alt="Preview" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8 }} />
+            <button type="button" className="btn btn-ghost" style={{ marginTop: 6 }} onClick={removePhoto}>Hapus Foto</button>
+          </div>
+        ) : null}
+        <input type="file" accept="image/*" onChange={handlePhotoChange} />
+      </div>
+
+      <div className="field"><label>Judul Listing</label><input value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Rumah 2 Lantai Jl. Merdeka" /></div>
+      <div className="field-row">
+        <div className="field"><label>Tipe</label><select value={form.type} onChange={(e) => set('type', e.target.value)}><option>Jual</option><option>Sewa</option></select></div>
+        <div className="field"><label>Kategori</label><select value={form.category} onChange={(e) => set('category', e.target.value)}>{CATEGORY_OPTIONS.map((c) => <option key={c}>{c}</option>)}</select></div>
+      </div>
+      <div className="field"><label>Alamat</label><input value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="Jl. ... Kota Malang" /></div>
+      <div className="field-row">
+        <div className="field"><label>Harga (Rp)</label><input type="number" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="850000000" /></div>
+        <div className="field"><label>Status</label><select value={form.status} onChange={(e) => set('status', e.target.value)}>{STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}</select></div>
+      </div>
+      <div className="field-row">
+        <div className="field"><label>Luas Tanah/Bangunan (m2)</label><input value={form.area} onChange={(e) => set('area', e.target.value)} placeholder="120/90" /></div>
+        <div className="field">
+          <label>Agen Penanggung Jawab</label>
+          <select value={form.agent_id} onChange={(e) => set('agent_id', e.target.value)} disabled={!isAdmin}>
+            <option value="">- Pilih Agen -</option>
+            {profiles.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="modal-actions">
+        {data.id && isAdmin && <button className="btn btn-ghost" style={{ marginRight: 'auto', color: 'var(--danger)' }} onClick={() => onDelete(data.id)}>Hapus</button>}
+        <button className="btn btn-ghost" onClick={onClose} disabled={saving}>Batal</button>
+        <button className="btn btn-primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan'}</button>
+      </div>
+    </Modal>
+  );
+}
