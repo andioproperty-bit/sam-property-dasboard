@@ -78,9 +78,12 @@
   opacity: 0.7;
   margin-left: 2px;
 }
-.filter:focus-visible,
-.item:focus-visible,
-button:focus-visible {
+   .filter:focus-visible,
+   .item:focus-visible,
+   .back:focus-visible,
+   .btnGold:focus-visible,
+   .btnGhost:focus-visible,
+   .send:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
