@@ -66,6 +66,7 @@ export default function Dashboard() {
             )}
             {activeTab === 'leads' && (
               <LeadsTab leads={data.leads} properties={data.properties} profiles={data.profiles} user={user} isAdmin={isAdmin} refresh={fetchAll} showToast={showToast} />
+               )}
                  {activeTab === 'chat' && (
      <ChatTab user={user} isAdmin={isAdmin} profiles={data.profiles} showToast={showToast} />
             )}
