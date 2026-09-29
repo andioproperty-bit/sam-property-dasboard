@@ -8,6 +8,7 @@ import OverviewTab from '../../components/OverviewTab';
 import ListingsTab from '../../components/ListingsTab';
 import LeadsTab from '../../components/LeadsTab';
    import ChatTab from '../../components/ChatTab';
+   import ChatTab from '../../components/ChatTab';
 import TransactionsTab from '../../components/TransactionsTab';
 import StaffTab from '../../components/StaffTab';
 
