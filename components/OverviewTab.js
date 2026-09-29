@@ -30,7 +30,7 @@ export default function OverviewTab({ properties, leads, transactions, profiles 
       const keys = Object.keys(byMonth).sort().slice(-6);
       chartsRef.current.trend = new Chart(trendRef.current, {
         type: 'bar',
-        data: { labels: keys.map(monthLabel), datasets: [{ label: 'Closing', data: keys.map((k) => byMonth[k]), backgroundColor: '#2F6F5A', borderRadius: 4, maxBarThickness: 36 }] },
+        data: { labels: keys.map(monthLabel), datasets: [{ label: 'Closing', data: keys.map((k) => byMonth[k]), backgroundColor: '#7D2233', borderRadius: 4, maxBarThickness: 36 }] },
         options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
       });
     }
@@ -41,7 +41,7 @@ export default function OverviewTab({ properties, leads, transactions, profiles 
       const counts = statuses.map((s) => properties.filter((p) => p.status === s).length);
       chartsRef.current.status = new Chart(statusRef.current, {
         type: 'doughnut',
-        data: { labels: statuses, datasets: [{ data: counts, backgroundColor: ['#2F6F5A', '#B8873A', '#9AA29C', '#D6CBAE'] }] },
+        data: { labels: statuses, datasets: [{ data: counts, backgroundColor: ['#7D2233', '#B8873A', '#A69B9D', '#D6CBAE'] }] },
         options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }, cutout: '62%' },
       });
     }
@@ -68,7 +68,7 @@ export default function OverviewTab({ properties, leads, transactions, profiles 
         .slice(0, 6);
       chartsRef.current.agent = new Chart(agentRef.current, {
         type: 'bar',
-        data: { labels: data.map((d) => d.name), datasets: [{ data: data.map((d) => d.total), backgroundColor: '#2F6F5A', borderRadius: 4, maxBarThickness: 28 }] },
+        data: { labels: data.map((d) => d.name), datasets: [{ data: data.map((d) => d.total), backgroundColor: '#7D2233', borderRadius: 4, maxBarThickness: 28 }] },
         options: {
           indexAxis: 'y',
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => formatRupiah(c.raw) } } },

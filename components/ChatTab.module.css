@@ -1,14 +1,14 @@
-/* Tab Chat WhatsApp — identitas SAM Property: navy + gold */
+/* Tab Chat WhatsApp — menyatu dengan tema dashboard: burgundy + krem + gold */
 .wrap {
-  --navy: #1b2a4a;
-  --navy-soft: #e9edf5;
+  --navy: #5c1422;
+  --navy-soft: #f5e6e8;
   --gold: #b8923a;
   --gold-soft: #f5edda;
-  --ink: #1d2433;
-  --muted: #6b7385;
-  --line: #e2e5ec;
-  --paper: #f6f7f9;
-  --danger: #b3261e;
+  --ink: #231a1c;
+  --muted: #6c6164;
+  --line: #e6dcd6;
+  --paper: #f6f4ef;
+  --danger: #c2410c;
 
   display: grid;
   grid-template-columns: minmax(280px, 340px) 1fr;
