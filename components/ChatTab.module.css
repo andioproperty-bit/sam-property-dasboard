@@ -599,7 +599,9 @@
 @media (max-width: 860px) {
   .wrap {
     grid-template-columns: 1fr;
-    height: calc(100vh - 32px);
+    height: calc(100dvh - 172px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: 420px;
+    border-radius: 10px;
   }
   .hideMobile {
     display: none;
