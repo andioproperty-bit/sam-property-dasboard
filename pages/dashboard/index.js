@@ -7,7 +7,7 @@ import Sidebar from '../../components/Sidebar';
 import OverviewTab from '../../components/OverviewTab';
 import ListingsTab from '../../components/ListingsTab';
 import LeadsTab from '../../components/LeadsTab';
-   import ChatTab from '../../components/ChatTab';
+import ChatTab from '../../components/ChatTab';
 import TransactionsTab from '../../components/TransactionsTab';
 import StaffTab from '../../components/StaffTab';
 
@@ -19,6 +19,12 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [data, setData] = useState({ properties: [], leads: [], transactions: [], profiles: [] });
   const [dataLoading, setDataLoading] = useState(true);
+
+  // Buka tab dari link, mis. saat notifikasi diketuk: /dashboard?tab=chat&c=<id>
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab');
+    if (t) setActiveTab(t);
+  }, []);
 
   useEffect(() => {
     if (!loading && !session) router.replace('/login');
@@ -66,9 +72,9 @@ export default function Dashboard() {
             )}
             {activeTab === 'leads' && (
               <LeadsTab leads={data.leads} properties={data.properties} profiles={data.profiles} user={user} isAdmin={isAdmin} refresh={fetchAll} showToast={showToast} />
-               )}
-                 {activeTab === 'chat' && (
-     <ChatTab user={user} isAdmin={isAdmin} profiles={data.profiles} showToast={showToast} />
+            )}
+            {activeTab === 'chat' && (
+              <ChatTab user={user} isAdmin={isAdmin} profiles={data.profiles} showToast={showToast} />
             )}
             {activeTab === 'transactions' && (
               <TransactionsTab transactions={data.transactions} properties={data.properties} leads={data.leads} profiles={data.profiles} user={user} isAdmin={isAdmin} refresh={fetchAll} showToast={showToast} />
