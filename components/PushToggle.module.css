@@ -1,0 +1,67 @@
+.box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #f5edda;
+  border: 1px solid #ead9b0;
+  font-size: 0.8rem;
+  color: #6b4e14;
+  line-height: 1.4;
+}
+.on {
+  background: #e3f1e8;
+  border-color: #c7e2d1;
+  color: #2f7a4f;
+}
+.text {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2fa35f;
+  flex: none;
+}
+.actions {
+  display: inline-flex;
+  gap: 12px;
+  flex: none;
+}
+.btn {
+  flex: none;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #5c1422;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:disabled,
+.link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.link {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+.btn:focus-visible,
+.link:focus-visible {
+  outline: 2px solid #b8923a;
+  outline-offset: 2px;
+}

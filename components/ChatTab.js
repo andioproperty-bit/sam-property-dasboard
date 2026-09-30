@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import s from './ChatTab.module.css';
+import PushToggle from './PushToggle';
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -125,6 +126,14 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
     else setConvs(data || []);
     setLoadingList(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Buka chat tertentu dari link notifikasi (?c=<id>), lalu rapikan alamatnya
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get('c');
+    if (c) setActiveId(c);
+    if (params.get('tab') || c) window.history.replaceState(null, '', window.location.pathname);
   }, []);
 
   useEffect(() => {
@@ -404,6 +413,7 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
       <aside className={`${s.list} ${activeId ? s.hideMobile : ''}`}>
         <header className={s.listHead}>
           <h1 className={s.title}>Pelanggan</h1>
+          <PushToggle showToast={showToast} />
           <input
             className={s.search}
             type="search"
