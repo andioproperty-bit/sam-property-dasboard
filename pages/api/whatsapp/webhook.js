@@ -8,6 +8,7 @@ import {
   phoneVariants,
   toLocalPhone,
 } from '../../../lib/waServer';
+import { sendPushToUsers } from '../../../lib/push';
 
 // Body mentah dibutuhkan untuk verifikasi signature Meta
 export const config = { api: { bodyParser: false } };
@@ -161,6 +162,34 @@ async function handleInbound(m, contacts) {
     p_at: at,
   });
   if (rpcErr) throw rpcErr;
+
+  if (m.type !== 'reaction') {
+    try {
+      await notifyStaff(conv.id, body);
+    } catch (e) {
+      console.error('[push] notifikasi gagal:', e?.message || e); // jangan gagalkan webhook
+    }
+  }
+}
+
+// Notifikasi HP: chat yang sudah dipegang → hanya agennya; yang belum dipegang → semua staf.
+async function notifyStaff(conversationId, preview) {
+  const db = supabaseAdmin();
+  const { data: c } = await db
+    .from('wa_conversations')
+    .select('id, assigned_to, contact_name, wa_id')
+    .eq('id', conversationId)
+    .single();
+  if (!c) return;
+  const title = c.contact_name || toLocalPhone(c.wa_id);
+  const job = sendPushToUsers(c.assigned_to ? [c.assigned_to] : null, {
+    title: c.assigned_to ? title : `${title} · Antrian baru`,
+    body: String(preview || '').slice(0, 140),
+    url: `/dashboard?tab=chat&c=${c.id}`,
+    tag: `chat-${c.id}`,
+  });
+  // Batasi waktu tunggu agar balasan ke Meta tetap cepat
+  await Promise.race([job, new Promise((r) => setTimeout(r, 6000))]);
 }
 
 async function handleEcho(m) {
