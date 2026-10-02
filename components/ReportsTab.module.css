@@ -1,0 +1,95 @@
+/* Tab Laporan — melengkapi class global (kpi-grid, panel, table-wrap) */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 20px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  padding: 7px 14px;
+  border: 1px solid var(--border, #e6dcd6);
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  color: var(--ink, #231a1c);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.chip:hover {
+  border-color: var(--accent, #7d2233);
+}
+.chipOn,
+.chipOn:hover {
+  background: var(--accent-dark, #5c1422);
+  border-color: var(--accent-dark, #5c1422);
+  color: #fff;
+}
+.chip:focus-visible,
+.dateField input:focus-visible {
+  outline: 2px solid var(--gold, #b8873a);
+  outline-offset: 2px;
+}
+.dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.dateField {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--ink-soft, #6c6164);
+}
+.dateField input {
+  padding: 7px 10px;
+  border: 1px solid var(--border, #e6dcd6);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  background: var(--surface, #fff);
+}
+.error {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--danger-soft, #f5e4df);
+  color: var(--danger, #ae4a34);
+  font-size: 0.86rem;
+}
+.kpiNote {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: var(--ink-soft, #6c6164);
+}
+.warn {
+  color: var(--danger, #ae4a34);
+}
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.panelHead h3 {
+  margin-bottom: 12px;
+}
+.num {
+  text-align: right;
+  white-space: nowrap;
+}
+.footnote {
+  margin: 12px 0 0;
+  font-size: 0.76rem;
+  color: var(--ink-faint, #a69b9d);
+  line-height: 1.5;
+}
+.block {
+  margin-bottom: 20px;
+}
