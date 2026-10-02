@@ -8,6 +8,7 @@ import OverviewTab from '../../components/OverviewTab';
 import ListingsTab from '../../components/ListingsTab';
 import LeadsTab from '../../components/LeadsTab';
 import ChatTab from '../../components/ChatTab';
+import ReportsTab from '../../components/ReportsTab';
 import TransactionsTab from '../../components/TransactionsTab';
 import StaffTab from '../../components/StaffTab';
 
@@ -78,6 +79,9 @@ export default function Dashboard() {
             )}
             {activeTab === 'transactions' && (
               <TransactionsTab transactions={data.transactions} properties={data.properties} leads={data.leads} profiles={data.profiles} user={user} isAdmin={isAdmin} refresh={fetchAll} showToast={showToast} />
+            )}
+            {activeTab === 'reports' && (
+              <ReportsTab leads={data.leads} properties={data.properties} profiles={data.profiles} user={user} isAdmin={isAdmin} />
             )}
             {activeTab === 'staff' && isAdmin && (
               <StaffTab profiles={data.profiles} transactions={data.transactions} isAdmin={isAdmin} refresh={fetchAll} showToast={showToast} />
