@@ -7,11 +7,14 @@ import {
   extractText,
   phoneVariants,
   toLocalPhone,
+  MEDIA_TYPES,
+  downloadWhatsAppMedia,
+  extForMime,
 } from '../../../lib/waServer';
 import { sendPushToUsers } from '../../../lib/push';
 
 // Body mentah dibutuhkan untuk verifikasi signature Meta
-export const config = { api: { bodyParser: false } };
+export const config = { api: { bodyParser: false }, maxDuration: 60 };
 
 const STATUS_RANK = { received: 0, sent: 1, delivered: 2, read: 3 };
 
@@ -146,6 +149,8 @@ async function handleInbound(m, contacts) {
         direction: 'in',
         msg_type: m.type || 'text',
         body,
+        caption: (MEDIA_TYPES.includes(m.type) && m[m.type]?.caption) || null,
+        media_name: m.type === 'document' ? m.document?.filename || null : null,
         status: 'received',
         created_at: at,
         raw: m,
@@ -162,6 +167,15 @@ async function handleInbound(m, contacts) {
     p_at: at,
   });
   if (rpcErr) throw rpcErr;
+
+  // Simpan gambar/file kiriman pelanggan ke Storage SAM
+  if (MEDIA_TYPES.includes(m.type) && m[m.type]?.id) {
+    try {
+      await storeInboundMedia(inserted[0].id, conv.id, m);
+    } catch (e) {
+      console.error('[wa-webhook] media gagal disimpan:', e?.message || e);
+    }
+  }
 
   if (m.type !== 'reaction') {
     try {
@@ -248,4 +262,25 @@ async function handleStatus(s) {
   if ((STATUS_RANK[s.status] ?? -1) > (STATUS_RANK[row.status] ?? -1)) {
     await db.from('wa_messages').update({ status: s.status }).eq('id', row.id);
   }
+}
+
+async function storeInboundMedia(messageRowId, conversationId, m) {
+  const db = supabaseAdmin();
+  const info = m[m.type];
+  const { buffer, mime, size } = await downloadWhatsAppMedia(info.id);
+  const ext = extForMime(info.mime_type || mime, info.filename);
+  const path = `in/${conversationId}/${m.id}.${ext}`;
+  const { error: upErr } = await db.storage
+    .from('wa-media')
+    .upload(path, buffer, { contentType: info.mime_type || mime, upsert: true });
+  if (upErr) throw upErr;
+  await db
+    .from('wa_messages')
+    .update({
+      media_path: path,
+      media_mime: info.mime_type || mime,
+      media_size: size,
+      media_name: info.filename || `${m.type}.${ext}`,
+    })
+    .eq('id', messageRowId);
 }
