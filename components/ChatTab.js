@@ -14,6 +14,83 @@ const CLASS_OPTIONS = [
 ];
 const CLASS_LABEL = { hot: 'Hot', warm: 'Warm', cool: 'Cool', closing: 'Closing' };
 
+// ---------- media ----------
+const MSG_FIELDS =
+  'id, direction, body, msg_type, status, error, sent_by, created_at, media_path, media_mime, media_name, media_size, caption';
+const MEDIA_MSG_TYPES = ['image', 'video', 'audio', 'document', 'sticker'];
+const ACCEPT_FILES =
+  'image/jpeg,image/png,video/mp4,audio/mpeg,audio/ogg,audio/mp4,audio/aac,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip';
+const MB = 1024 * 1024;
+
+function fileKind(mime) {
+  const m = String(mime || '').toLowerCase();
+  if (m === 'image/jpeg' || m === 'image/png') return 'image';
+  if (m === 'video/mp4' || m === 'video/3gpp') return 'video';
+  if (m.startsWith('audio/')) return 'audio';
+  return 'document';
+}
+function sizeLimit(kind) {
+  if (kind === 'image') return 5 * MB;
+  if (kind === 'video' || kind === 'audio') return 16 * MB;
+  return 50 * MB;
+}
+function fmtSize(bytes) {
+  const n = Number(bytes) || 0;
+  if (n >= MB) return `${(n / MB).toFixed(1)} MB`;
+  if (n >= 1024) return `${Math.round(n / 1024)} KB`;
+  return `${n} B`;
+}
+function safeName(name) {
+  return String(name || 'file').replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-80);
+}
+
+const signedCache = {};
+async function getSignedUrl(path, download) {
+  const key = path + (download ? '|dl' : '');
+  const hit = signedCache[key];
+  if (hit && hit.exp > Date.now()) return hit.url;
+  const { data } = await supabase.storage
+    .from('wa-media')
+    .createSignedUrl(path, 3600, download ? { download: typeof download === 'string' ? download : true } : undefined);
+  if (data?.signedUrl) signedCache[key] = { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 };
+  return data?.signedUrl || null;
+}
+
+function MediaView({ m, onLoad }) {
+  const [url, setUrl] = useState(null);
+  const [dlUrl, setDlUrl] = useState(null);
+  const kind = m.msg_type === 'sticker' ? 'image' : fileKind(m.media_mime);
+
+  useEffect(() => {
+    let alive = true;
+    getSignedUrl(m.media_path).then((u) => alive && setUrl(u));
+    getSignedUrl(m.media_path, m.media_name || true).then((u) => alive && setDlUrl(u));
+    return () => {
+      alive = false;
+    };
+  }, [m.media_path, m.media_name]);
+
+  if (!url) return <div className={s.mediaLoading}>Memuat file…</div>;
+  if (kind === 'image') {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className={s.mediaImgLink}>
+        <img src={url} alt={m.caption || 'Gambar'} className={s.mediaImg} onLoad={onLoad} />
+      </a>
+    );
+  }
+  if (kind === 'video') return <video src={url} controls preload="metadata" className={s.mediaVideo} onLoadedMetadata={onLoad} />;
+  if (kind === 'audio') return <audio src={url} controls preload="metadata" className={s.mediaAudio} />;
+  return (
+    <a href={dlUrl || url} className={s.fileCard} target="_blank" rel="noreferrer">
+      <span className={s.fileIcon}>{(m.media_name || '').split('.').pop()?.slice(0, 4).toUpperCase() || 'FILE'}</span>
+      <span className={s.fileMeta}>
+        <span className={s.fileName}>{m.media_name || 'Dokumen'}</span>
+        <span className={s.fileSize}>{m.media_size ? fmtSize(m.media_size) + ' · ' : ''}Unduh</span>
+      </span>
+    </a>
+  );
+}
+
 const QUEUES = [
   { key: 'semua', label: 'Semua' },
   { key: 'umum', label: 'Antrian Umum' },
@@ -102,6 +179,9 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [file, setFile] = useState(null); // lampiran yang akan dikirim
+  const [filePreview, setFilePreview] = useState(null);
+  const fileInputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [panel, setPanel] = useState(null); // 'class' | 'transfer' | 'contact' | null
   const [contactDraft, setContactDraft] = useState('');
@@ -158,6 +238,8 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
   useEffect(() => {
     setPanel(null);
     setNotice('');
+    setFile(null);
+    setFilePreview(null);
     if (!activeId) {
       setMessages([]);
       setEvents([]);
@@ -169,7 +251,7 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
     Promise.all([
       supabase
         .from('wa_messages')
-        .select('id, direction, body, msg_type, status, error, sent_by, created_at')
+        .select(MSG_FIELDS)
         .eq('conversation_id', activeId)
         .order('created_at', { ascending: true })
         .limit(500),
@@ -299,7 +381,62 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
     runRpc('wa_transfer', { p_target: target }, target ? `Chat ditransfer ke ${nameOf(target)}.` : 'Chat dikembalikan ke Antrian Umum.');
   const saveContact = () => runRpc('wa_set_contact', { p_name: contactDraft }, 'Nama kontak diperbarui.');
 
+  function pickFile(e) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    const kind = fileKind(f.type);
+    if (f.size > sizeLimit(kind)) {
+      notifyError(`File terlalu besar. Batas ${kind === 'image' ? 'gambar 5 MB' : kind === 'document' ? 'dokumen 50 MB' : 'video/audio 16 MB'}.`);
+      return;
+    }
+    setFile(f);
+    setFilePreview(kind === 'image' ? URL.createObjectURL(f) : null);
+  }
+
+  function clearFile() {
+    if (filePreview) URL.revokeObjectURL(filePreview);
+    setFile(null);
+    setFilePreview(null);
+  }
+
+  async function sendFile() {
+    if (!file || !active || sending) return;
+    setSending(true);
+    try {
+      const path = `out/${active.id}/${Date.now()}-${safeName(file.name)}`;
+      const { error: upErr } = await supabase.storage
+        .from('wa-media')
+        .upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+      if (upErr) throw new Error('Gagal mengunggah file: ' + upErr.message);
+
+      const { data } = await supabase.auth.getSession();
+      const r = await fetch('/api/whatsapp/send-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data?.session?.access_token || ''}` },
+        body: JSON.stringify({
+          conversationId: active.id,
+          path,
+          mime: file.type || 'application/octet-stream',
+          name: file.name,
+          size: file.size,
+          caption: draft.trim(),
+        }),
+      });
+      const json = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(json.error || 'File gagal terkirim.');
+      setDraft('');
+      clearFile();
+      if (json.message) setMessages((prev) => (prev.some((m) => m.id === json.message.id) ? prev : [...prev, json.message]));
+    } catch (e) {
+      notifyError(e.message);
+    } finally {
+      setSending(false);
+    }
+  }
+
   async function send() {
+    if (file) return sendFile();
     const text = draft.trim();
     if (!text || !active || sending) return;
     setSending(true);
@@ -331,6 +468,12 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
   function togglePanel(name) {
     if (name === 'contact') setContactDraft(active?.contact_name || '');
     setPanel((p) => (p === name ? null : name));
+  }
+
+  // Setelah gambar selesai dimuat, tetap tampilkan pesan terbaru (kecuali staf sedang membaca ke atas)
+  function keepAtBottom() {
+    const el = threadRef.current;
+    if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 500) el.scrollTop = el.scrollHeight;
   }
 
   // ---------- teks kejadian ----------
@@ -393,7 +536,19 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
       out.push(
         <div key={m.id} className={`${s.bubbleRow} ${outgoing ? s.rowOut : s.rowIn}`}>
           <div className={`${s.bubble} ${outgoing ? s.bubbleOut : s.bubbleIn}`}>
-            <div className={s.bubbleText}>{m.body}</div>
+            {m.media_path ? (
+              <>
+                <MediaView m={m} onLoad={keepAtBottom} />
+                {m.caption && <div className={`${s.bubbleText} ${s.caption}`}>{m.caption}</div>}
+              </>
+            ) : MEDIA_MSG_TYPES.includes(m.msg_type) && m.direction === 'in' ? (
+              <div className={s.bubbleText}>
+                {m.body}
+                <span className={s.mediaPending}>File sedang diproses atau tidak tersedia</span>
+              </div>
+            ) : (
+              <div className={s.bubbleText}>{m.body}</div>
+            )}
             <div className={s.bubbleMeta}>
               {outgoing && <span>{m.sent_by ? nameOf(m.sent_by) : 'Dari HP'}</span>}
               <span>{clock(m.created_at)}</span>
@@ -631,11 +786,46 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
                 <p className={s.closedNote}>Chat ini dipegang {nameOf(active.assigned_to)}.</p>
               ) : (
                 <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ACCEPT_FILES}
+                    className={s.hiddenInput}
+                    onChange={pickFile}
+                    tabIndex={-1}
+                  />
+                  <button
+                    className={s.attach}
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending}
+                    aria-label="Lampirkan gambar atau file"
+                    title="Lampirkan gambar atau file"
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 11.5l-8.6 8.6a5.5 5.5 0 01-7.8-7.8l8.6-8.6a3.7 3.7 0 015.2 5.2l-8.6 8.6a1.8 1.8 0 01-2.6-2.6l7.9-7.9" />
+                    </svg>
+                  </button>
                   <div className={s.composerMain}>
+                    {file && (
+                      <div className={s.attachPreview}>
+                        {filePreview ? (
+                          <img src={filePreview} alt="" className={s.attachThumb} />
+                        ) : (
+                          <span className={s.fileIcon}>{file.name.split('.').pop()?.slice(0, 4).toUpperCase()}</span>
+                        )}
+                        <span className={s.fileMeta}>
+                          <span className={s.fileName}>{file.name}</span>
+                          <span className={s.fileSize}>{fmtSize(file.size)} · tulis keterangan di bawah (opsional)</span>
+                        </span>
+                        <button className={s.attachRemove} onClick={clearFile} disabled={sending} aria-label="Batalkan lampiran">
+                          ×
+                        </button>
+                      </div>
+                    )}
                     <textarea
                       className={s.input}
                       rows={1}
-                      placeholder="Tulis balasan… (Enter kirim, Shift+Enter baris baru)"
+                      placeholder={file ? 'Keterangan file (opsional)…' : 'Tulis balasan… (Enter kirim, Shift+Enter baris baru)'}
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
                       onKeyDown={onKeyDown}
@@ -643,8 +833,8 @@ export default function ChatTab({ user, isAdmin, profiles = [], showToast }) {
                     />
                     <span className={s.windowNote}>Sisa {windowText(windowLeft)} untuk membalas bebas</span>
                   </div>
-                  <button className={s.send} onClick={send} disabled={sending || !draft.trim()}>
-                    {sending ? 'Mengirim…' : 'Kirim'}
+                  <button className={s.send} onClick={send} disabled={sending || (!draft.trim() && !file)}>
+                    {sending ? (file ? 'Mengunggah…' : 'Mengirim…') : 'Kirim'}
                   </button>
                 </>
               )}
