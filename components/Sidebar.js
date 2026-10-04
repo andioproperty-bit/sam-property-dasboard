@@ -7,7 +7,9 @@ const NAV_ITEMS = [
   { key: 'chat', label: 'Chat WA', icon: <path d="M4 5h16v11H9l-5 4z" /> },
   { key: 'transactions', label: 'Transaksi', icon: <><path d="M6 3h9l3 3v15H6z" /><path d="M9 8h6M9 12h6M9 16h4" /></> },
   { key: 'reports', label: 'Laporan', icon: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></> },
-  { key: 'staff', label: 'Staf & Peran', icon: <><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M7 9h10M7 13h10M7 17h6" /></> },
+  { key: 'kinerja', label: 'Kinerja', icon: ... },
+  { key: 'teknik', label: 'Teknik', icon: ... },
+  { key: 'staff', label: 'Staf & Peran', icon: ... },  { key: 'staff', label: 'Staf & Peran', icon: <><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M7 9h10M7 13h10M7 17h6" /></> },
 ];
 
 export default function Sidebar({ activeTab, onChangeTab, profile, isAdmin }) {
