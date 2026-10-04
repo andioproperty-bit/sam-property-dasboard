@@ -11,8 +11,6 @@ import ChatTab from '../../components/ChatTab';
 import ReportsTab from '../../components/ReportsTab';
 import TransactionsTab from '../../components/TransactionsTab';
 import StaffTab from '../../components/StaffTab';
-import KinerjaTab from '../../components/KinerjaTab';
-import TeknikTab from '../../components/TeknikTab';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -85,10 +83,7 @@ export default function Dashboard() {
             {activeTab === 'reports' && (
               <ReportsTab leads={data.leads} properties={data.properties} profiles={data.profiles} user={user} isAdmin={isAdmin} />
             )}
-                        {activeTab === 'teknik' && (
-              <TeknikTab user={user} isAdmin={isAdmin} profiles={data.profiles} showToast={showToast} />
-            )}           
-                         {activeTab === 'staff' && isAdmin && (
+            {activeTab === 'staff' && isAdmin && (
               <StaffTab profiles={data.profiles} transactions={data.transactions} isAdmin={isAdmin} refresh={fetchAll} showToast={showToast} />
             )}
           </>
