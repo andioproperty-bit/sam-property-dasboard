@@ -7,8 +7,12 @@ const NAV_ITEMS = [
   { key: 'chat', label: 'Chat WA', icon: <path d="M4 5h16v11H9l-5 4z" /> },
   { key: 'transactions', label: 'Transaksi', icon: <><path d="M6 3h9l3 3v15H6z" /><path d="M9 8h6M9 12h6M9 16h4" /></> },
   { key: 'reports', label: 'Laporan', icon: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></> },
+  { key: 'news', label: 'Berita', icon: <><rect x="4" y="4" width="16" height="16" rx="1.5" /><path d="M8 9h8M8 13h8M8 17h5" /></> },
   { key: 'staff', label: 'Staf & Peran', icon: <><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M7 9h10M7 13h10M7 17h6" /></> },
 ];
+
+// Menu yang hanya muncul untuk Admin
+const ADMIN_ONLY = ['staff', 'news'];
 
 export default function Sidebar({ activeTab, onChangeTab, profile, isAdmin }) {
   async function handleLogout() {
@@ -23,7 +27,7 @@ export default function Sidebar({ activeTab, onChangeTab, profile, isAdmin }) {
         <div className="brand-tag">Dashboard Operasional</div>
       </div>
       <nav>
-        {NAV_ITEMS.filter((item) => item.key !== 'staff' || isAdmin).map((item) => (
+        {NAV_ITEMS.filter((item) => !ADMIN_ONLY.includes(item.key) || isAdmin).map((item) => (
           <button
             key={item.key}
             className={'nav-item' + (activeTab === item.key ? ' active' : '')}
