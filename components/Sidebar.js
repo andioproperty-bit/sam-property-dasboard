@@ -2,11 +2,13 @@ import { supabase } from '../lib/supabaseClient';
 
 const NAV_ITEMS = [
   { key: 'overview', label: 'Ringkasan', icon: <path d="M3 11l9-8 9 8M5 10v10h14V10" /> },
+  { key: 'absensi', label: 'Absensi', icon: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></> },
   { key: 'listings', label: 'Listing Properti', icon: <><rect x="3" y="7" width="18" height="14" rx="1" /><path d="M8 7V4h8v3" /></> },
   { key: 'leads', label: 'Leads', icon: <><circle cx="9" cy="8" r="3.2" /><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" /><path d="M16 8.5a3 3 0 110 5.4" /><path d="M21.5 20c0-2.8-1.7-4.9-4-5.7" /></> },
   { key: 'chat', label: 'Chat WA', icon: <path d="M4 5h16v11H9l-5 4z" /> },
   { key: 'transactions', label: 'Transaksi', icon: <><path d="M6 3h9l3 3v15H6z" /><path d="M9 8h6M9 12h6M9 16h4" /></> },
   { key: 'reports', label: 'Laporan', icon: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></> },
+  { key: 'kinerja', label: 'Kinerja', icon: <><path d="M4 17l5-5 4 3 7-8" /><path d="M15 7h5v5" /></> },
   { key: 'news', label: 'Berita', icon: <><rect x="4" y="4" width="16" height="16" rx="1.5" /><path d="M8 9h8M8 13h8M8 17h5" /></> },
   { key: 'staff', label: 'Staf & Peran', icon: <><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M7 9h10M7 13h10M7 17h6" /></> },
 ];

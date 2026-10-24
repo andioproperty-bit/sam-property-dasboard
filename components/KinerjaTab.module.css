@@ -1,0 +1,276 @@
+/* Menu Kinerja — mengikuti tema dashboard */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -6px 0 20px;
+}
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.monthLabel {
+  min-width: 150px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+}
+.toggle {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.toggleBtn {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.toggleOn {
+  background: var(--accent-dark);
+  color: #fff;
+}
+.kpiNote {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* ---------- kartu staf ---------- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.cardName {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+}
+.cardSub {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.score {
+  flex: none;
+  min-width: 92px;
+  padding: 8px 12px 9px;
+  border-radius: 10px;
+  text-align: center;
+}
+.scoreNum {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.scoreLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.g_ok {
+  background: #e3f1e8;
+  color: #2f7a4f;
+}
+.g_good {
+  background: #eaf0f8;
+  color: #2f5c8f;
+}
+.g_warn {
+  background: #f5ebd8;
+  color: #8a651f;
+}
+.g_bad {
+  background: #f5e4df;
+  color: #ae4a34;
+}
+.g_none {
+  background: #edebe3;
+  color: #6c6164;
+}
+.gradePill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.strip {
+  margin: 16px 0 4px;
+}
+
+/* ---------- bar pencapaian ---------- */
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-top: 14px;
+}
+.barTop {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.barSub {
+  font-weight: 500;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.barTrack {
+  height: 7px;
+  border-radius: 4px;
+  background: #efe8e5;
+  overflow: hidden;
+}
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+/* ---------- angka detail ---------- */
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.facts dt {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+.facts dd {
+  margin: 1px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.dim {
+  color: var(--ink-soft);
+  font-weight: 400;
+  font-size: 12.5px;
+}
+.bad {
+  color: var(--danger);
+}
+.warnText {
+  color: #8a651f;
+}
+.cardFoot {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+/* ---------- tabel & catatan ---------- */
+.num {
+  text-align: right;
+  white-space: nowrap;
+}
+.footnote {
+  margin: 18px 0 0;
+  max-width: 820px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-faint);
+}
+.errorBox {
+  margin: 4px 0 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+/* ---------- laporan harian ---------- */
+.reports {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.reports li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.reportHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13.5px;
+}
+.reportNote {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: #6b4e14;
+}
+.reportText {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.toggleBtn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    width: 100%;
+  }
+  .actions > * {
+    flex: 1;
+  }
+}
