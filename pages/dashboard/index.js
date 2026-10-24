@@ -12,6 +12,8 @@ import ReportsTab from '../../components/ReportsTab';
 import TransactionsTab from '../../components/TransactionsTab';
 import StaffTab from '../../components/StaffTab';
 import NewsTab from '../../components/NewsTab';
+import AttendanceTab from '../../components/AttendanceTab';
+import KinerjaTab from '../../components/KinerjaTab';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -68,6 +70,9 @@ export default function Dashboard() {
             {activeTab === 'overview' && (
               <OverviewTab properties={data.properties} leads={data.leads} transactions={data.transactions} profiles={data.profiles} />
             )}
+            {activeTab === 'absensi' && (
+              <AttendanceTab user={user} isAdmin={isAdmin} profiles={data.profiles} showToast={showToast} />
+            )}
             {activeTab === 'listings' && (
               <ListingsTab properties={data.properties} profiles={data.profiles} user={user} isAdmin={isAdmin} refresh={fetchAll} showToast={showToast} />
             )}
@@ -82,6 +87,9 @@ export default function Dashboard() {
             )}
             {activeTab === 'reports' && (
               <ReportsTab leads={data.leads} properties={data.properties} profiles={data.profiles} user={user} isAdmin={isAdmin} />
+            )}
+            {activeTab === 'kinerja' && (
+              <KinerjaTab user={user} isAdmin={isAdmin} profiles={data.profiles} showToast={showToast} />
             )}
             {activeTab === 'news' && isAdmin && (
               <NewsTab isAdmin={isAdmin} showToast={showToast} />
