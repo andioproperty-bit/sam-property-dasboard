@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { supabase } from '../lib/supabaseClient';
 import { useUser } from '../lib/useUser';
+import a from '../components/Auth.module.css';
 
 export default function Login() {
   const router = useRouter();
@@ -46,6 +48,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nama@sampropertyagency.com"
+              autoComplete="email"
             />
           </div>
           <div className="field">
@@ -56,7 +59,13 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="current-password"
             />
+          </div>
+          <div className={a.forgot}>
+            <Link href="/lupa-password" className={a.link}>
+              Lupa password?
+            </Link>
           </div>
           <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={submitting}>
             {submitting ? 'Memproses...' : 'Masuk'}
