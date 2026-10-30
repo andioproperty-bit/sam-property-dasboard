@@ -14,6 +14,7 @@ import StaffTab from '../../components/StaffTab';
 import NewsTab from '../../components/NewsTab';
 import AttendanceTab from '../../components/AttendanceTab';
 import KinerjaTab from '../../components/KinerjaTab';
+import BackupTab from '../../components/BackupTab';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -94,6 +95,7 @@ export default function Dashboard() {
             {activeTab === 'news' && isAdmin && (
               <NewsTab isAdmin={isAdmin} showToast={showToast} />
             )}
+            {activeTab === 'backup' && isAdmin && <BackupTab showToast={showToast} />}
             {activeTab === 'staff' && isAdmin && (
               <StaffTab profiles={data.profiles} transactions={data.transactions} isAdmin={isAdmin} refresh={fetchAll} showToast={showToast} />
             )}
