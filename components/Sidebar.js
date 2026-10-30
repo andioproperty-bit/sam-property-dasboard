@@ -11,11 +11,12 @@ const NAV_ITEMS = [
   { key: 'reports', label: 'Laporan', icon: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></> },
   { key: 'kinerja', label: 'Kinerja', icon: <><path d="M4 17l5-5 4 3 7-8" /><path d="M15 7h5v5" /></> },
   { key: 'news', label: 'Berita', icon: <><rect x="4" y="4" width="16" height="16" rx="1.5" /><path d="M8 9h8M8 13h8M8 17h5" /></> },
+  { key: 'backup', label: 'Backup Data', icon: <><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8" /><path d="M4.5 5.5v6.5c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V5.5" /><path d="M4.5 12v6.5c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V12" /></> },
   { key: 'staff', label: 'Staf & Peran', icon: <><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M7 9h10M7 13h10M7 17h6" /></> },
 ];
 
 // Menu yang hanya muncul untuk Admin
-const ADMIN_ONLY = ['staff', 'news'];
+const ADMIN_ONLY = ['staff', 'news', 'backup'];
 
 export default function Sidebar({ activeTab, onChangeTab, profile, isAdmin }) {
   async function handleLogout() {
