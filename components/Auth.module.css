@@ -1,0 +1,149 @@
+/* Halaman lupa password & ganti password */
+.forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px 0 16px;
+}
+.link {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}
+.link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.success {
+  background: #e3f1e8;
+  color: #24603d;
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+}
+.help {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.waBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.waBtn:hover {
+  border-color: var(--accent);
+}
+.waBtn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.back {
+  display: block;
+  text-align: center;
+  margin-top: 16px;
+}
+.pwWrap {
+  position: relative;
+}
+.pwWrap input {
+  padding-right: 64px !important;
+}
+.show {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.show:focus-visible {
+  outline: 2px solid var(--gold);
+  border-radius: 4px;
+}
+.meter {
+  display: flex;
+  gap: 4px;
+  margin: -6px 0 6px;
+}
+.meter span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+.meter .on1 {
+  background: var(--danger);
+}
+.meter .on2 {
+  background: var(--gold);
+}
+.meter .on3 {
+  background: #2f7a4f;
+}
+.hint {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+
+/* Tombol ganti password di sidebar */
+.sideLink {
+  display: block;
+  margin-top: 8px;
+  color: #e6c7cc;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.sideLink:hover {
+  color: #fff;
+}
+.mobileKey {
+  display: none;
+}
+@media (max-width: 900px) {
+  .mobileKey {
+    position: fixed;
+    z-index: 41;
+    right: 92px;
+    top: calc(env(safe-area-inset-top) + 12px);
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(239, 237, 228, 0.25);
+    border-radius: 6px;
+    color: #efede4;
+  }
+  .mobileKey svg {
+    width: 16px;
+    height: 16px;
+  }
+}

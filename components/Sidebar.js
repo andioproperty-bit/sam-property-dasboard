@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import a from './Auth.module.css';
 
 const NAV_ITEMS = [
   { key: 'overview', label: 'Ringkasan', icon: <path d="M3 11l9-8 9 8M5 10v10h14V10" /> },
@@ -46,7 +47,14 @@ export default function Sidebar({ activeTab, onChangeTab, profile, isAdmin }) {
         {profile?.name || 'Pengguna'}
         <br />
         <span className="role-badge">{isAdmin ? 'Admin' : 'Agen'}</span>
+        <a href="/reset-password" className={a.sideLink}>Ganti password</a>
       </div>
+      <a href="/reset-password" className={a.mobileKey} aria-label="Ganti password" title="Ganti password">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="8" cy="15" r="4" />
+          <path d="M11 12l9-9M17 6l3 3M14 9l2 2" />
+        </svg>
+      </a>
       <button className="sidebar-logout" onClick={handleLogout}>Keluar</button>
     </aside>
   );
