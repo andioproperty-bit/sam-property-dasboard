@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabaseClient';
 import { formatRupiah } from '../lib/format';
 import Modal from './Modal';
@@ -73,6 +74,7 @@ export default function KinerjaTab({ user, isAdmin, profiles = [], showToast }) 
   const [view, setView] = useState('kartu');
   const [targetFor, setTargetFor] = useState(null);
   const [reportsFor, setReportsFor] = useState(null);
+  const [printing, setPrinting] = useState(false);
   const notify = useCallback((m) => (showToast ? showToast(m) : window.alert(m)), [showToast]);
 
   const load = useCallback(async () => {
@@ -186,59 +188,7 @@ export default function KinerjaTab({ user, isAdmin, profiles = [], showToast }) 
   }
 
   function printReport() {
-    const w = window.open('', '_blank');
-    if (!w) return notify('Pop-up diblokir browser. Izinkan pop-up untuk mencetak laporan.');
-    const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-    const printedAt = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-    const body = enriched
-      .map((r) => {
-        const g = gradeOf(r.score);
-        return `<tr>
-          <td class="l"><b>${esc(r.name)}</b></td>
-          <td>${r.required ? `${hadirOf(r)}/${r.workdays}` : '—'}</td>
-          <td>${r.required ? pct(hadirOf(r), r.workdays) + '%' : '—'}</td>
-          <td>${r.terlambat}× <span class="m">${r.late_minutes ? fmtDuration(r.late_minutes) : ''}</span></td>
-          <td>${r.izin + r.sakit + r.cuti + r.dinas}</td>
-          <td>${r.alpa}</td>
-          <td>${esc(r.avg_check_in || '—')}</td>
-          <td>${r.leads}${r.target_leads ? ` / ${r.target_leads}` : ''}</td>
-          <td>${r.closing}${r.target_closing ? ` / ${r.target_closing}` : ''}</td>
-          <td class="r">${esc(formatRupiah(r.sales))}</td>
-          <td><b>${r.score ?? '–'}</b></td>
-          <td class="l">${esc(g.label)}</td>
-        </tr>`;
-      })
-      .join('');
-    w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Laporan Kinerja ${esc(fmtMonth(month))}</title>
-<style>
-  @page { size: A4 landscape; margin: 14mm; }
-  body { font-family: Georgia, 'Times New Roman', serif; color: #1a2238; margin: 0; }
-  .kop { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #1b2a4a; padding-bottom: 10px; }
-  .kop .pt { font-size: 20px; font-weight: bold; color: #1b2a4a; }
-  .kop .sub { font-size: 12px; color: #6b6f7d; font-family: Arial, sans-serif; }
-  .gold { height: 3px; background: #b8923a; margin-top: 2px; }
-  h1 { font-size: 18px; margin: 22px 0 4px; color: #1b2a4a; }
-  .period { font-family: Arial, sans-serif; font-size: 12.5px; color: #555; margin-bottom: 14px; }
-  table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11.5px; }
-  th { background: #1b2a4a; color: #fff; padding: 7px 6px; font-weight: 600; text-align: center; }
-  td { border-bottom: 1px solid #dcdfe6; padding: 7px 6px; text-align: center; }
-  td.l, th.l { text-align: left; } td.r { text-align: right; } .m { color: #888; }
-  .note { font-family: Arial, sans-serif; font-size: 10.5px; color: #666; margin-top: 12px; line-height: 1.5; }
-  .sign { margin-top: 36px; display: flex; justify-content: flex-end; font-family: Arial, sans-serif; font-size: 12.5px; }
-  .sign div { text-align: center; min-width: 230px; } .sign .sp { height: 64px; }
-</style></head><body>
-<div class="kop"><div><div class="pt">PT Satya Manggala Propertindo</div><div class="sub">SAM Property · Malang, Jawa Timur · WA 0811-3032-0099</div></div><div class="sub">Dokumen internal</div></div>
-<div class="gold"></div>
-<h1>Laporan Kinerja Staf</h1>
-<div class="period">Periode ${esc(fmtMonth(month))}${month === monthStart(today) ? ' (berjalan, data sampai hari ini)' : ''}</div>
-<table><thead><tr>
-<th class="l">Nama</th><th>Hadir / hari kerja</th><th>Kehadiran</th><th>Terlambat</th><th>Izin/sakit/cuti/dinas</th><th>Tidak hadir</th><th>Rata-rata masuk</th><th>Leads / target</th><th>Closing / target</th><th>Nilai penjualan</th><th>Skor</th><th class="l">Predikat</th>
-</tr></thead><tbody>${body}</tbody></table>
-<div class="note">Skor 0–100 = 30% kedisiplinan + 30% pencapaian leads + 40% pencapaian closing. Kedisiplinan: hadir tepat waktu = 1, terlambat = 0,5, izin/sakit/cuti/dinas yang disetujui = 1, tidak hadir = 0. Komponen tanpa target tidak dihitung. Closing dan nilai penjualan diambil dari menu Transaksi. Predikat: A ≥ 85, B ≥ 70, C ≥ 55, D &lt; 55.</div>
-<div class="sign"><div>Malang, ${esc(printedAt)}<br>Mengetahui,<div class="sp"></div><b>Simon Andyo Margo (SAM Property)</b></div></div>
-<script>window.onload = function(){ window.print(); };</script>
-</body></html>`);
-    w.document.close();
+    setPrinting(true);
   }
 
   return (
@@ -417,6 +367,9 @@ export default function KinerjaTab({ user, isAdmin, profiles = [], showToast }) 
         />
       )}
       {reportsFor && <DailyReports row={reportsFor} month={month} onClose={() => setReportsFor(null)} />}
+      {printing && (
+        <PrintReport rows={enriched} month={month} isCurrent={month === monthStart(today)} onClose={() => setPrinting(false)} />
+      )}
     </section>
   );
 }
@@ -665,3 +618,135 @@ function DailyReports({ row, month, onClose }) {
   );
 }
 
+
+// =====================================================================
+// Laporan cetak — tampil di dalam aplikasi (bukan tab baru), supaya
+// di HP/PWA selalu bisa kembali ke dashboard.
+// =====================================================================
+const PRINT_CSS = `
+.kr-root{position:fixed;inset:0;z-index:9999;background:#e9e6e1;overflow:auto;-webkit-overflow-scrolling:touch;}
+.kr-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;justify-content:space-between;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:#7D2233;color:#fff;font-family:Inter,-apple-system,sans-serif;}
+.kr-bar b{font-size:14px;font-weight:600;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kr-btn{font-family:inherit;font-size:13.5px;font-weight:600;border-radius:8px;padding:9px 14px;cursor:pointer;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;white-space:nowrap;}
+.kr-btn.kr-main{background:#fff;color:#7D2233;border-color:#fff;}
+.kr-scroll{padding:20px 16px 40px;overflow-x:auto;}
+.kr-page{background:#fff;color:#1a2238;width:270mm;max-width:none;margin:0 auto;padding:14mm;box-shadow:0 2px 14px rgba(0,0,0,.12);font-family:Georgia,'Times New Roman',serif;}
+.kr-kop{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1b2a4a;padding-bottom:10px;}
+.kr-pt{font-size:20px;font-weight:bold;color:#1b2a4a;}
+.kr-sub{font-size:12px;color:#6b6f7d;font-family:Arial,sans-serif;}
+.kr-gold{height:3px;background:#b8923a;margin-top:2px;}
+.kr-page h1{font-size:18px;margin:22px 0 4px;color:#1b2a4a;}
+.kr-period{font-family:Arial,sans-serif;font-size:12.5px;color:#555;margin-bottom:14px;}
+.kr-page table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:11.5px;}
+.kr-page th{background:#1b2a4a;color:#fff;padding:7px 6px;font-weight:600;text-align:center;border:none;white-space:normal;font-size:11.5px;}
+.kr-page td{border-bottom:1px solid #dcdfe6;padding:7px 6px;text-align:center;vertical-align:middle;}
+.kr-page .l{text-align:left;} .kr-page .r{text-align:right;} .kr-m{color:#888;}
+.kr-note{font-family:Arial,sans-serif;font-size:10.5px;color:#666;margin-top:12px;line-height:1.5;}
+.kr-sign{margin-top:36px;display:flex;justify-content:flex-end;font-family:Arial,sans-serif;font-size:12.5px;}
+.kr-sign>div{text-align:center;min-width:230px;} .kr-sp{height:64px;}
+.kr-hint{font-family:Inter,-apple-system,sans-serif;font-size:12px;color:#6c6164;text-align:center;margin:12px 0 0;}
+@media print{
+  @page{size:A4 landscape;margin:14mm;}
+  html,body{background:#fff !important;}
+  body > *:not(.kr-root){display:none !important;}
+  .kr-root{position:static;overflow:visible;background:#fff;}
+  .kr-bar,.kr-hint{display:none !important;}
+  .kr-scroll{padding:0;overflow:visible;}
+  .kr-page{width:auto;padding:0;box-shadow:none;margin:0;}
+  .kr-page th{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .kr-gold{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+`;
+
+function PrintReport({ rows, month, isCurrent, onClose }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Tombol "kembali" HP (Android) menutup laporan, bukan keluar aplikasi
+    window.history.pushState({ krPrint: true }, '');
+    const onPop = () => onClose();
+    window.addEventListener('popstate', onPop);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      document.body.style.overflow = prevOverflow;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function back() {
+    if (window.history.state && window.history.state.krPrint) window.history.back();
+    else onClose();
+  }
+
+  if (!mounted) return null;
+  const printedAt = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+
+  return createPortal(
+    <div className="kr-root" role="dialog" aria-label="Laporan kinerja">
+      <style>{PRINT_CSS}</style>
+      <div className="kr-bar">
+        <button className="kr-btn" onClick={back}>‹ Kembali ke Dashboard</button>
+        <b>Laporan Kinerja · {fmtMonth(month)}</b>
+        <button className="kr-btn kr-main" onClick={() => window.print()}>Cetak / Simpan PDF</button>
+      </div>
+      <div className="kr-scroll">
+        <div className="kr-page">
+          <div className="kr-kop">
+            <div>
+              <div className="kr-pt">PT Satya Manggala Propertindo</div>
+              <div className="kr-sub">SAM Property · Malang, Jawa Timur · WA 0811-3032-0099</div>
+            </div>
+            <div className="kr-sub">Dokumen internal</div>
+          </div>
+          <div className="kr-gold" />
+          <h1>Laporan Kinerja Staf</h1>
+          <div className="kr-period">Periode {fmtMonth(month)}{isCurrent ? ' (berjalan, data sampai hari ini)' : ''}</div>
+          <table>
+            <thead>
+              <tr>
+                <th className="l">Nama</th><th>Hadir / hari kerja</th><th>Kehadiran</th><th>Terlambat</th><th>Izin/sakit/cuti/dinas</th>
+                <th>Tidak hadir</th><th>Rata-rata masuk</th><th>Leads / target</th><th>Closing / target</th><th>Nilai penjualan</th><th>Skor</th><th className="l">Predikat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.user_id || r.name}>
+                  <td className="l"><b>{r.name}</b></td>
+                  <td>{r.required ? `${hadirOf(r)}/${r.workdays}` : '—'}</td>
+                  <td>{r.required ? pct(hadirOf(r), r.workdays) + '%' : '—'}</td>
+                  <td>{r.terlambat}× <span className="kr-m">{r.late_minutes ? fmtDuration(r.late_minutes) : ''}</span></td>
+                  <td>{r.izin + r.sakit + r.cuti + r.dinas}</td>
+                  <td>{r.alpa}</td>
+                  <td>{r.avg_check_in || '—'}</td>
+                  <td>{r.leads}{r.target_leads ? ` / ${r.target_leads}` : ''}</td>
+                  <td>{r.closing}{r.target_closing ? ` / ${r.target_closing}` : ''}</td>
+                  <td className="r">{formatRupiah(r.sales)}</td>
+                  <td><b>{r.score ?? '–'}</b></td>
+                  <td className="l">{gradeOf(r.score).label}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="kr-note">
+            Skor 0–100 = 30% kedisiplinan + 30% pencapaian leads + 40% pencapaian closing. Kedisiplinan: hadir tepat waktu = 1, terlambat = 0,5,
+            izin/sakit/cuti/dinas yang disetujui = 1, tidak hadir = 0. Komponen tanpa target tidak dihitung. Closing dan nilai penjualan diambil dari
+            menu Transaksi. Predikat: A ≥ 85, B ≥ 70, C ≥ 55, D &lt; 55.
+          </div>
+          <div className="kr-sign">
+            <div>
+              Malang, {printedAt}<br />Mengetahui,
+              <div className="kr-sp" />
+              <b>Simon Andyo Margo (SAM Property)</b>
+            </div>
+          </div>
+        </div>
+        <p className="kr-hint">Di HP: tekan “Cetak / Simpan PDF”, lalu pilih printer atau “Simpan sebagai PDF”. Geser tabel ke samping untuk melihat semua kolom.</p>
+      </div>
+    </div>,
+    document.body
+  );
+}
