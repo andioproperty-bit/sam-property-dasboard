@@ -155,30 +155,105 @@ export function distanceM(lat1, lng1, lat2, lng2) {
 }
 
 // ---------- GPS ----------
-export function getPosition() {
+function readPosition(opts) {
   return new Promise((resolve, reject) => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      reject(new Error('Perangkat ini tidak mendukung GPS.'));
-      return;
-    }
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: Math.round(p.coords.accuracy) }),
-      (err) => {
-        if (err.code === 1) {
-          reject(
-            new Error(
-              'Izin lokasi ditolak. Buka pengaturan browser/HP, izinkan lokasi untuk sam-admin.asvarakozta.id, lalu coba lagi.'
-            )
-          );
-        } else if (err.code === 3) {
-          reject(new Error('GPS terlalu lama merespons. Pastikan GPS aktif dan coba lagi di tempat terbuka.'));
-        } else {
-          reject(new Error('Lokasi tidak bisa dibaca. Pastikan GPS aktif, lalu coba lagi.'));
-        }
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      (err) => reject(err),
+      opts
     );
   });
+}
+
+// Coba GPS akurat dulu; kalau gagal/terlalu lama, coba lagi dengan lokasi jaringan (WiFi/seluler).
+export async function getPosition() {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    const e = new Error('Browser ini tidak bisa membaca lokasi. Buka aplikasi lewat Google Chrome (Android) atau Safari (iPhone).');
+    e.code = 'nogps';
+    throw e;
+  }
+  let first;
+  try {
+    return await readPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  } catch (err) {
+    first = err;
+  }
+  if (first && first.code !== 1) {
+    try {
+      return await readPosition({ enableHighAccuracy: false, timeout: 20000, maximumAge: 5 * 60 * 1000 });
+    } catch (err) {
+      first = err;
+    }
+  }
+  let msg;
+  if (first.code === 1) {
+    msg = 'Izin lokasi untuk aplikasi ini masih DITOLAK. Ikuti langkah di bawah untuk mengizinkannya, lalu tekan "Coba lagi".';
+  } else if (first.code === 3) {
+    msg = 'GPS terlalu lama merespons. Pastikan Lokasi/GPS di HP menyala, lalu tekan "Coba lagi" (lebih cepat di dekat jendela atau di luar ruangan).';
+  } else {
+    msg = 'Lokasi tidak bisa dibaca. Pastikan Lokasi/GPS di HP menyala, lalu tekan "Coba lagi".';
+  }
+  const e = new Error(msg);
+  e.code = first.code === 1 ? 'denied' : first.code === 3 ? 'timeout' : 'unavailable';
+  throw e;
+}
+
+// Jenis perangkat, untuk panduan yang tepat
+export function deviceKind() {
+  if (typeof navigator === 'undefined') return 'lain';
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'iphone';
+  if (/Android/i.test(ua)) return /; wv\)|FBAN|FBAV|Instagram|WhatsApp|Line\//i.test(ua) ? 'inapp' : 'android';
+  return 'laptop';
+}
+
+// Langkah mengizinkan lokasi / kamera per perangkat
+export function permissionSteps(what) {
+  const nama = what === 'kamera' ? 'Kamera' : 'Lokasi';
+  const host = 'sam-admin.asvarakozta.id';
+  const d = deviceKind();
+  if (d === 'inapp') {
+    return [
+      'Aplikasi sedang terbuka di dalam WhatsApp/Instagram, yang tidak mengizinkan GPS & kamera.',
+      'Ketuk ⋮ di pojok kanan atas → "Buka di Chrome", atau ketik ' + host + ' langsung di Google Chrome.',
+    ];
+  }
+  if (d === 'iphone') {
+    return [
+      'Buka Pengaturan iPhone → Privasi & Keamanan → Layanan Lokasi → nyalakan.',
+      what === 'kamera'
+        ? 'Pengaturan → Safari → Kamera → pilih "Tanya" atau "Izinkan".'
+        : 'Masih di Layanan Lokasi → Situs Web Safari → pilih "Saat Menggunakan App".',
+      'Kembali ke aplikasi, tutup lalu buka lagi, dan tekan "Coba lagi".',
+    ];
+  }
+  if (d === 'android') {
+    return [
+      what === 'kamera' ? 'Pastikan kamera tidak sedang dipakai aplikasi lain.' : 'Tarik panel atas HP → nyalakan "Lokasi".',
+      'Di Chrome, ketuk ikon gembok/setelan di sebelah alamat ' + host + ' → Izin → ' + nama + ' → Izinkan.',
+      'Kalau tidak ada pilihan: Pengaturan HP → Aplikasi → Chrome → Izin → ' + nama + ' → Izinkan saat aplikasi digunakan.',
+      'Kembali ke aplikasi dan tekan "Coba lagi".',
+    ];
+  }
+  return [
+    'Di laptop, klik ikon gembok di sebelah alamat ' + host + ' → ' + nama + ' → Izinkan, lalu muat ulang halaman.',
+    what === 'kamera'
+      ? 'Pastikan laptop punya webcam dan tidak dipakai aplikasi lain (Zoom/Meet).'
+      : 'Laptop sering tidak punya GPS sehingga lokasinya tidak terbaca. Paling mudah: absen lewat HP.',
+  ];
+}
+
+// Catat kendala absen supaya Admin bisa melihat penyebabnya (tidak mengganggu bila gagal)
+export function logAttEvent(stage, message, detail) {
+  try {
+    const ua = typeof navigator !== 'undefined' ? String(navigator.userAgent || '').slice(0, 400) : null;
+    supabase
+      .from('att_client_logs')
+      .insert({ stage, message: message ? String(message).slice(0, 500) : null, user_agent: ua, detail: { device: deviceKind(), ...(detail || {}) } })
+      .then(() => {}, () => {});
+  } catch (e) {
+    // abaikan
+  }
 }
 
 // ---------- foto ----------
@@ -215,7 +290,11 @@ export async function signedUrl(path) {
 export async function uploadAttendanceFile(userId, blob, label) {
   const path = `${userId}/${jakartaToday()}-${label}-${Date.now()}.jpg`;
   const { error } = await supabase.storage.from('attendance').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-  if (error) throw new Error('Foto gagal diunggah: ' + error.message);
+  if (error) {
+    const e = new Error('Foto gagal diunggah: ' + error.message + '. Periksa koneksi internet lalu coba lagi.');
+    e.stage = 'foto';
+    throw e;
+  }
   return path;
 }
 

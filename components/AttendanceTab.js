@@ -33,7 +33,22 @@ import {
   uploadAttendanceFile,
   downloadCsv,
   cleanError,
+  deviceKind,
+  permissionSteps,
+  logAttEvent,
 } from './absensiUtils';
+
+// Langkah perbaikan izin lokasi/kamera, sesuai jenis HP/laptop
+function HelpSteps({ what }) {
+  const steps = permissionSteps(what);
+  return (
+    <ol className={s.helpSteps}>
+      {steps.map((t, i) => (
+        <li key={i}>{t}</li>
+      ))}
+    </ol>
+  );
+}
 
 // =====================================================================
 // Kalender bulanan berwarna (dipakai juga di tab Kinerja)
@@ -292,6 +307,13 @@ function MyAttendance({ user, isAdmin, settings, notify, goSettings }) {
               </button>
             )}
             {state === 'done' && <div className={s.doneText}>Absensi hari ini lengkap. Terima kasih!</div>}
+            {state !== 'done' && (deviceKind() === 'laptop' || deviceKind() === 'inapp') && (
+              <div className={s.heroHint}>
+                {deviceKind() === 'laptop'
+                  ? 'Absen paling lancar lewat HP: GPS dan kamera laptop sering tidak terbaca.'
+                  : 'Buka lewat Google Chrome/Safari, bukan dari dalam WhatsApp/Instagram, supaya GPS & kamera bisa dipakai.'}
+              </div>
+            )}
             {state === 'in' && lateNow && (
               <div className={s.heroHint}>
                 Sudah lewat {fmtDuration(nowMin - startMin)} dari jam masuk, absen akan tercatat terlambat.
@@ -407,10 +429,11 @@ function MyAttendance({ user, isAdmin, settings, notify, goSettings }) {
 // =====================================================================
 // Kamera selfie (kamera langsung; cadangan: pilih dari kamera HP)
 // =====================================================================
-function Camera({ onCapture, captured, onRetake }) {
+function Camera({ onCapture, captured, onRetake, onError }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
   const [ready, setReady] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -427,9 +450,16 @@ function Camera({ onCapture, captured, onRetake }) {
       return () => URL.revokeObjectURL(u);
     }
     setPreviewUrl(null);
+    setError('');
+    setReady(false);
     let cancelled = false;
+    const fail = (msg, detail) => {
+      if (cancelled) return;
+      setError(msg);
+      if (onError) onError(msg, detail);
+    };
     if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Kamera langsung tidak tersedia di browser ini.');
+      fail('Kamera langsung tidak tersedia di browser ini. Pakai tombol "Buka kamera HP" di bawah.', { reason: 'no_getusermedia' });
       return undefined;
     }
     navigator.mediaDevices
@@ -446,12 +476,24 @@ function Camera({ onCapture, captured, onRetake }) {
         }
         setReady(true);
       })
-      .catch(() => setError('Izin kamera ditolak atau kamera sedang dipakai aplikasi lain.'));
+      .catch((err) => {
+        const name = err?.name || '';
+        const msg =
+          name === 'NotAllowedError' || name === 'SecurityError'
+            ? 'Izin kamera untuk aplikasi ini masih DITOLAK.'
+            : name === 'NotFoundError' || name === 'OverconstrainedError'
+            ? 'Kamera tidak ditemukan di perangkat ini.'
+            : name === 'NotReadableError'
+            ? 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi kamera/video call, lalu coba lagi.'
+            : 'Kamera tidak bisa dinyalakan.';
+        fail(msg, { reason: name || String(err) });
+      });
     return () => {
       cancelled = true;
       stop();
     };
-  }, [captured]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captured, attempt]);
 
   async function snap() {
     const v = videoRef.current;
@@ -485,14 +527,20 @@ function Camera({ onCapture, captured, onRetake }) {
   }
 
   return (
+    <>
     <div className={s.camBox}>
       {error ? (
         <div className={s.camFallback}>
           <p>{error}</p>
-          <label className="btn btn-primary">
-            Buka kamera HP
-            <input type="file" accept="image/*" capture="user" onChange={pickFile} className={s.hidden} />
-          </label>
+          <div className={s.camActions}>
+            <label className="btn btn-primary">
+              Buka kamera HP
+              <input type="file" accept="image/*" capture="user" onChange={pickFile} className={s.hidden} />
+            </label>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAttempt((n) => n + 1)}>
+              Coba lagi
+            </button>
+          </div>
         </div>
       ) : (
         <>
@@ -503,6 +551,13 @@ function Camera({ onCapture, captured, onRetake }) {
         </>
       )}
     </div>
+    {error && (
+      <details className={s.helpBox}>
+        <summary>Cara mengizinkan kamera</summary>
+        <HelpSteps what="kamera" />
+      </details>
+    )}
+    </>
   );
 }
 
@@ -524,22 +579,28 @@ function CheckModal({ mode, user, settings, onClose, onDone }) {
   const inOffice = dist != null && dist <= settings.radius_m + Math.min(pos.accuracy || 0, 100);
   const outside = officeSet && pos && !inOffice;
 
+  const [posCode, setPosCode] = useState('');
   const locate = useCallback(async () => {
     setLocating(true);
     setPosError('');
+    setPosCode('');
     try {
       setPos(await getPosition());
     } catch (e) {
       setPos(null);
       setPosError(e.message);
+      setPosCode(e.code || '');
+      logAttEvent('gps', e.message, { code: e.code || null, mode });
     } finally {
       setLocating(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    logAttEvent('buka', null, { mode });
     locate();
-  }, [locate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const textOk = mode === 'out' ? text.trim().length >= 10 : !outside || text.trim().length >= 5;
   const canSubmit = !!pos && (!needPhoto || !!photo) && textOk && !saving;
@@ -559,6 +620,7 @@ function CheckModal({ mode, user, settings, onClose, onDone }) {
           p_note: text.trim(),
         });
         if (e) throw e;
+        logAttEvent('berhasil', null, { mode });
         onDone('Absen masuk berhasil.');
       } else {
         const { error: e } = await supabase.rpc('att_check_out', {
@@ -568,11 +630,14 @@ function CheckModal({ mode, user, settings, onClose, onDone }) {
           p_report: text.trim(),
         });
         if (e) throw e;
+        logAttEvent('berhasil', null, { mode });
         onDone('Absen pulang berhasil. Selamat istirahat!');
       }
     } catch (e) {
-      setError(cleanError(e));
+      const msg = cleanError(e);
+      setError(msg);
       setSaving(false);
+      logAttEvent(e.stage === 'foto' ? 'foto' : 'kirim', msg, { mode });
     }
   }
 
@@ -581,7 +646,12 @@ function CheckModal({ mode, user, settings, onClose, onDone }) {
       <h3>{mode === 'in' ? 'Absen Masuk' : 'Absen Pulang'}</h3>
 
       {needPhoto && (
-        <Camera captured={photo} onCapture={setPhoto} onRetake={() => setPhoto(null)} />
+        <Camera
+          captured={photo}
+          onCapture={setPhoto}
+          onRetake={() => setPhoto(null)}
+          onError={(msg, detail) => logAttEvent('kamera', msg, { ...(detail || {}), mode })}
+        />
       )}
 
       <div className={`${s.locBox} ${outside ? s.locOut : pos ? s.locIn : ''}`}>
@@ -604,10 +674,19 @@ function CheckModal({ mode, user, settings, onClose, onDone }) {
         </div>
         {!locating && (
           <button className={s.linkBtn} onClick={locate}>
-            Perbarui
+            {posError ? 'Coba lagi' : 'Perbarui'}
           </button>
         )}
       </div>
+      {posError && (
+        <details className={s.helpBox} open={posCode === 'denied' || posCode === 'nogps'}>
+          <summary>Cara mengaktifkan lokasi</summary>
+          <HelpSteps what="lokasi" />
+        </details>
+      )}
+      {!pos && !locating && (
+        <div className="field-hint">Tombol kirim aktif setelah lokasi terbaca{needPhoto ? ' dan foto selfie diambil' : ''}.</div>
+      )}
 
       <div className="field">
         <label htmlFor="att-text">
@@ -744,13 +823,18 @@ function TeamRecap({ profiles, settings, notify }) {
   const [correct, setCorrect] = useState(null);
   const [thumbs, setThumbs] = useState({});
   const [exporting, setExporting] = useState(false);
+  const [issues, setIssues] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [a, l] = await Promise.all([
+    const dayStart = new Date(date + 'T00:00:00+07:00').toISOString();
+    const dayEnd = new Date(new Date(date + 'T00:00:00+07:00').getTime() + 86400000).toISOString();
+    const [a, l, g] = await Promise.all([
       supabase.from('attendance').select('*').eq('work_date', date),
       supabase.from('leave_requests').select('*').eq('status', 'disetujui').lte('start_date', date).gte('end_date', date),
+      supabase.from('att_client_logs').select('*').gte('created_at', dayStart).lt('created_at', dayEnd).order('created_at', { ascending: false }).limit(300),
     ]);
+    setIssues(g.data || []);
     if (a.error) notify('Rekap gagal dimuat: ' + a.error.message);
     setRows(a.data || []);
     setLeaves(l.data || []);
@@ -852,6 +936,41 @@ function TeamRecap({ profiles, settings, notify }) {
           <div className={`kpi-value ${k.belum ? s.textBad : ''}`}>{k.belum}</div>
         </div>
       </div>
+
+      {(() => {
+        const STAGE_TXT = { gps: 'Lokasi/GPS', kamera: 'Kamera', foto: 'Upload foto', kirim: 'Kirim absen' };
+        const DEV_TXT = { android: 'Android', iphone: 'iPhone', laptop: 'Laptop/PC', inapp: 'Browser WhatsApp/IG', lain: 'Lainnya' };
+        const byUser = {};
+        issues.forEach((g) => {
+          if (!byUser[g.user_id]) byUser[g.user_id] = { opened: 0, ok: false, errors: [] };
+          const u = byUser[g.user_id];
+          if (g.stage === 'buka') u.opened += 1;
+          else if (g.stage === 'berhasil') u.ok = true;
+          else u.errors.push(g);
+        });
+        const stuck = Object.entries(byUser)
+          .filter(([uid, u]) => u.errors.length && !rows.some((r) => r.user_id === uid))
+          .map(([uid, u]) => ({ uid, ...u, name: profiles.find((p) => p.id === uid)?.name || 'Staf' }));
+        if (!stuck.length) return null;
+        return (
+          <div className={s.issueBox}>
+            <div className={s.issueTitle}>Kendala absen ({stuck.length} staf belum berhasil absen)</div>
+            {stuck.map((u) => {
+              const last = u.errors[0];
+              return (
+                <div key={u.uid} className={s.issueRow}>
+                  <div>
+                    <b>{u.name}</b> · {STAGE_TXT[last.stage] || last.stage} · {fmtTime(last.created_at)}
+                    <span className={s.muted}> · {DEV_TXT[last.detail?.device] || 'Perangkat tidak diketahui'} · {u.errors.length}× gagal</span>
+                  </div>
+                  <div className={s.issueMsg}>{last.message || '—'}</div>
+                </div>
+              );
+            })}
+            <div className={s.muted}>Kirim panduan izin lokasi/kamera ke staf tersebut, atau minta absen lewat HP dengan Google Chrome/Safari.</div>
+          </div>
+        );
+      })()}
 
       <div className="table-wrap">
         {loading ? (

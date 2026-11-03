@@ -682,3 +682,15 @@
     box-shadow: none;
   }
 }
+
+/* ---------- bantuan izin & kendala absen ---------- */
+.camActions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+.helpBox { margin: 8px 0 12px; font-size: 13px; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 12px; text-align: left; }
+.helpBox summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.helpSteps { margin: 8px 0 2px; padding-left: 18px; line-height: 1.55; color: var(--ink); }
+.helpSteps li { margin-bottom: 4px; }
+.issueBox { background: var(--danger-soft); border: 1px solid #EBC7BD; border-radius: var(--radius-md); padding: 12px 14px; margin: 0 0 16px; font-size: 13px; }
+.issueTitle { font-weight: 700; color: var(--danger); margin-bottom: 8px; }
+.issueRow { padding: 6px 0; border-bottom: 1px solid #EBC7BD; }
+.issueRow:last-of-type { border-bottom: none; margin-bottom: 6px; }
+.issueMsg { color: var(--ink-soft); margin-top: 2px; }
