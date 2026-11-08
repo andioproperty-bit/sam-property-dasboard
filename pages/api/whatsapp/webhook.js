@@ -5,13 +5,21 @@ import {
   readRawBody,
   verifySignature,
   extractText,
-  phoneVariants,
   toLocalPhone,
   MEDIA_TYPES,
   downloadWhatsAppMedia,
   extForMime,
 } from '../../../lib/waServer';
 import { sendPushToUsers } from '../../../lib/push';
+
+// Nomor baku, sama dengan kolom leads.phone_norm (0812xxxx)
+function normPhone(waId) {
+  const d = String(waId || '').replace(/\D/g, '');
+  if (d.length < 8) return null;
+  if (d.startsWith('62')) return '0' + d.slice(2);
+  if (d.startsWith('8')) return '0' + d;
+  return d;
+}
 
 // Body mentah dibutuhkan untuk verifikasi signature Meta
 export const config = { api: { bodyParser: false }, maxDuration: 60 };
@@ -94,12 +102,14 @@ async function getOrCreateConversation(waId, name) {
 
   // Cari lead lama dengan nomor yang sama, kalau tidak ada buat lead baru
   let leadId = null;
-  const { data: match } = await db
-    .from('leads')
-    .select('id')
-    .in('phone', phoneVariants(waId))
-    .order('created_at', { ascending: false })
-    .limit(1);
+  const findLead = () =>
+    db
+      .from('leads')
+      .select('id')
+      .eq('phone_norm', normPhone(waId))
+      .order('created_at', { ascending: true })
+      .limit(1);
+  const { data: match } = await findLead();
 
   if (match && match.length) {
     leadId = match[0].id;
@@ -114,9 +124,13 @@ async function getOrCreateConversation(waId, name) {
         notes: 'Dibuat otomatis dari WhatsApp Inbox',
       })
       .select('id')
-      .single();
-    if (leadErr) console.error('[wa-webhook] gagal membuat lead:', leadErr.message);
-    else leadId = newLead.id;
+      .maybeSingle();
+    if (leadErr || !newLead) {
+      // Nomor sudah ada dengan format lain: database menggabungkan ke lead lama
+      const { data: again } = await findLead();
+      if (again && again.length) leadId = again[0].id;
+      else if (leadErr) console.error('[wa-webhook] gagal membuat lead:', leadErr.message);
+    } else leadId = newLead.id;
   }
 
   const { data: created, error: convErr } = await db
