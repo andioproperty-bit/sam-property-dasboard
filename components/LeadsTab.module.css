@@ -50,3 +50,12 @@
   .summary div{padding:8px;}
   .summary b{font-size:12.5px;}
 }
+
+/* ---------- privasi & nomor ganda ---------- */
+.privacy{font-size:13px;line-height:1.5;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 14px;margin:0 0 14px 0;color:var(--ink-soft);}
+.privacy b{color:var(--ink);}
+.free{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:999px;white-space:nowrap;}
+.dup{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-soft);padding:2px 7px;border-radius:999px;white-space:nowrap;}
+.phoneCheck{font-size:13px;line-height:1.5;border-radius:var(--radius-sm);padding:8px 12px;margin:-4px 0 12px 0;background:var(--bg);color:var(--ink-soft);}
+.phoneOk{background:#E4EEE9;color:#234F40;}
+.phoneBad{background:var(--danger-soft);color:var(--danger);}
