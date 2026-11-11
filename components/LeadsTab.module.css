@@ -59,3 +59,7 @@
 .phoneCheck{font-size:13px;line-height:1.5;border-radius:var(--radius-sm);padding:8px 12px;margin:-4px 0 12px 0;background:var(--bg);color:var(--ink-soft);}
 .phoneOk{background:#E4EEE9;color:#234F40;}
 .phoneBad{background:var(--danger-soft);color:var(--danger);}
+
+/* ---------- pilihan aplikasi WA ---------- */
+.waBox{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.waApp{font-family:var(--font-body);font-size:11.5px;color:var(--ink-soft);border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:3px 6px;max-width:120px;}

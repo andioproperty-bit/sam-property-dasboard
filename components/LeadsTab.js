@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Modal from './Modal';
 import f from './LeadsTab.module.css';
+import { waLink, WA_APP_OPTIONS } from '../lib/waLink';
 
 const STATUS_OPTIONS = ['Baru', 'Follow-up', 'Nego', 'Closing', 'Hilang'];
 const SOURCE_OPTIONS = ['WhatsApp', 'Instagram', 'Facebook', 'Website', 'Referral', 'Walk-in'];
@@ -408,7 +409,18 @@ function FollowupModal({ lead, profiles, user, isAdmin, canAdd, showToast, onCha
     showToast('Catatan dihapus');
   }
 
-  const wa = waNumber(lead.phone);
+  const me = profiles.find((p) => p.id === user.id) || {};
+  const [waApp, setWaApp] = useState(me.wa_app || 'otomatis');
+  const link = waLink(lead.phone, { app: waApp });
+  async function changeWaApp(v) {
+    setWaApp(v);
+    const { error: e } = await supabase.from('profiles').update({ wa_app: v }).eq('id', user.id);
+    if (e) showToast('Gagal menyimpan pilihan WA: ' + e.message);
+    else {
+      me.wa_app = v;
+      showToast('Tombol Buka WA sekarang membuka ' + (WA_APP_OPTIONS.find((o) => o.value === v)?.label || 'WhatsApp'));
+    }
+  }
   const nx = nextInfo(lead);
   const quick = [
     ['Besok', addDays(today, 1)],
@@ -425,10 +437,15 @@ function FollowupModal({ lead, profiles, user, isAdmin, canAdd, showToast, onCha
             {lead.phone || '-'} · <span className={'badge ' + (STATUS_BADGE[lead.status] || 'badge-grey')}>{lead.status}</span>
           </div>
         </div>
-        {wa && (
-          <a className="btn btn-ghost btn-sm" href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer">
-            Buka WA
-          </a>
+        {link && (
+          <div className={f.waBox}>
+            <a className="btn btn-ghost btn-sm" href={link.href} target={link.target} rel="noreferrer">
+              Buka WA
+            </a>
+            <select className={f.waApp} value={waApp} onChange={(e) => changeWaApp(e.target.value)} title="Aplikasi WhatsApp yang dibuka">
+              {WA_APP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.value === 'otomatis' ? 'Otomatis' : o.value === 'bisnis' ? 'WA Business' : 'WA biasa'}</option>)}
+            </select>
+          </div>
         )}
       </div>
 

@@ -3,11 +3,21 @@ import { supabase } from '../lib/supabaseClient';
 import { formatRupiah } from '../lib/format';
 import Modal from './Modal';
 import { MIN_PASSWORD, generatePassword } from '../lib/passwordUtils';
+import { WA_APP_OPTIONS } from '../lib/waLink';
 
 export default function StaffTab({ profiles, transactions, isAdmin, refresh, showToast }) {
   const [savingId, setSavingId] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [resetFor, setResetFor] = useState(null);
+
+  async function handleWaAppChange(id, wa_app) {
+    setSavingId(id);
+    const { error } = await supabase.from('profiles').update({ wa_app }).eq('id', id);
+    setSavingId(null);
+    if (error) { showToast('Gagal menyimpan pilihan WA: ' + error.message); return; }
+    showToast('Pilihan aplikasi WA tersimpan');
+    refresh();
+  }
 
   async function handleRoleChange(id, role) {
     setSavingId(id);
@@ -54,6 +64,19 @@ export default function StaffTab({ profiles, transactions, isAdmin, refresh, sho
                 </select>
               ) : (
                 <div style={{ marginTop: 12 }}><span className="badge badge-grey">{p.role === 'admin' ? 'Admin' : 'Agen'}</span></div>
+              )}
+              {isAdmin && (
+                <label style={{ display: 'block', marginTop: 8, fontSize: 11.5, color: 'var(--ink-soft)' }}>
+                  Tombol "Buka WA" membuka
+                  <select
+                    value={p.wa_app || 'otomatis'}
+                    disabled={savingId === p.id}
+                    onChange={(e) => handleWaAppChange(p.id, e.target.value)}
+                    style={{ marginTop: 4, width: '100%', padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, fontFamily: 'var(--font-body)' }}
+                  >
+                    {WA_APP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </label>
               )}
               {isAdmin && (
                 <button
