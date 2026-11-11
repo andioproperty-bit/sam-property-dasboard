@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { key: 'transactions', label: 'Transaksi', icon: <><path d="M6 3h9l3 3v15H6z" /><path d="M9 8h6M9 12h6M9 16h4" /></> },
   { key: 'reports', label: 'Laporan', icon: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></> },
   { key: 'kinerja', label: 'Kinerja', icon: <><path d="M4 17l5-5 4 3 7-8" /><path d="M15 7h5v5" /></> },
+  { key: 'keuangan', label: 'Keuangan', icon: <><rect x="2.5" y="6" width="19" height="13" rx="2" /><path d="M2.5 10h19" /><path d="M16 14.5h2.5" /><path d="M5 6l9.5-3 1.5 3" /></> },
   { key: 'news', label: 'Berita', icon: <><rect x="4" y="4" width="16" height="16" rx="1.5" /><path d="M8 9h8M8 13h8M8 17h5" /></> },
   { key: 'backup', label: 'Backup Data', icon: <><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8" /><path d="M4.5 5.5v6.5c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V5.5" /><path d="M4.5 12v6.5c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V12" /></> },
   { key: 'staff', label: 'Staf & Peran', icon: <><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M7 9h10M7 13h10M7 17h6" /></> },
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
 
 // Menu yang hanya muncul untuk Admin
 const ADMIN_ONLY = ['staff', 'news', 'backup'];
+const FINANCE_ONLY = ['keuangan']; // Admin + peran Keuangan
 
 export default function Sidebar({ activeTab, onChangeTab, profile, isAdmin }) {
   async function handleLogout() {
@@ -31,7 +33,11 @@ export default function Sidebar({ activeTab, onChangeTab, profile, isAdmin }) {
         <div className="brand-tag">Dashboard Operasional</div>
       </div>
       <nav>
-        {NAV_ITEMS.filter((item) => !ADMIN_ONLY.includes(item.key) || isAdmin).map((item) => (
+        {NAV_ITEMS.filter((item) => {
+          if (ADMIN_ONLY.includes(item.key)) return isAdmin;
+          if (FINANCE_ONLY.includes(item.key)) return isAdmin || profile?.role === 'keuangan';
+          return true;
+        }).map((item) => (
           <button
             key={item.key}
             className={'nav-item' + (activeTab === item.key ? ' active' : '')}
@@ -47,7 +53,7 @@ export default function Sidebar({ activeTab, onChangeTab, profile, isAdmin }) {
       <div className="sidebar-user">
         {profile?.name || 'Pengguna'}
         <br />
-        <span className="role-badge">{isAdmin ? 'Admin' : 'Agen'}</span>
+        <span className="role-badge">{isAdmin ? 'Admin' : profile?.role === 'keuangan' ? 'Keuangan' : 'Agen'}</span>
         <a href="/reset-password" className={a.sideLink}>Ganti password</a>
       </div>
       <a href="/reset-password" className={a.mobileKey} aria-label="Ganti password" title="Ganti password">

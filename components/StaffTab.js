@@ -60,10 +60,11 @@ export default function StaffTab({ profiles, transactions, isAdmin, refresh, sho
                   style={{ marginTop: 12, width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, fontFamily: 'var(--font-body)' }}
                 >
                   <option value="agent">Agen</option>
+                  <option value="keuangan">Keuangan</option>
                   <option value="admin">Admin</option>
                 </select>
               ) : (
-                <div style={{ marginTop: 12 }}><span className="badge badge-grey">{p.role === 'admin' ? 'Admin' : 'Agen'}</span></div>
+                <div style={{ marginTop: 12 }}><span className="badge badge-grey">{p.role === 'admin' ? 'Admin' : p.role === 'keuangan' ? 'Keuangan' : 'Agen'}</span></div>
               )}
               {isAdmin && (
                 <label style={{ display: 'block', marginTop: 8, fontSize: 11.5, color: 'var(--ink-soft)' }}>
